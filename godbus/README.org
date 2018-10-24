@@ -1,0 +1,31 @@
+* godbus
+
+Test =github.com/godbus/dbus= library, contains server and client.
+
+** Usage
+
+#+BEGIN_SRC shell
+go build -o server server.go
+go build -o client client.go
+./server & sleep 1; ./client
+#+END_SRC
+
+The outputs such as:
+
+#+BEGIN_SRC shell
+/Data/Projects/Private/examples/godbus on  master! ⌚ 22:54:18
+$ go build -o server server.go
+
+/Data/Projects/Private/examples/godbus on  master! ⌚ 22:54:23
+$ go build -o client client.go
+
+/Data/Projects/Private/examples/godbus on  master! ⌚ 22:54:29
+$ ./server& sleep 1 ; ./client
+[1] 7710
+[Server] Listen on org.jouyouyun.Test...
+[Client] 'Hello' result: Hello, world!
+[Client] Prop 'Name':
+[Client] Signal: /org/jouyouyun/Test org.jouyouyun.Test.NameChanged
+[Client] Signal Value: Test
+[Client] Prop 'Name': Test
+#+END_SRC
