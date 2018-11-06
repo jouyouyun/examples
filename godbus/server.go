@@ -47,17 +47,8 @@ func (s *Server) Hello() (string, *dbus.Error) {
 }
 
 func (s *Server) setupDBus() error {
-	// request bus name
-	reply, err := s.conn.RequestName(dbusName, dbus.NameFlagDoNotQueue)
-	if err != nil {
-		return err
-	}
-	if reply != dbus.RequestNameReplyPrimaryOwner {
-		return fmt.Errorf("Name '%s' has exists", dbusName)
-	}
-
 	// export object
-	err = s.conn.Export(s, dbusPath, dbusIFC)
+	err := s.conn.Export(s, dbusPath, dbusIFC)
 	if err != nil {
 		return err
 	}
@@ -80,8 +71,22 @@ func (s *Server) setupDBus() error {
 			},
 		},
 	}
-	return s.conn.Export(introspect.NewIntrospectable(propsNode), dbusPath,
+	err = s.conn.Export(introspect.NewIntrospectable(propsNode), dbusPath,
 		"org.freedesktop.DBus.Introspectable")
+	if err != nil {
+		return err
+	}
+
+	// request bus name
+	// Note: must after export, otherwise will occur wrong (not found method on object) via dbus-daemon
+	reply, err := s.conn.RequestName(dbusName, dbus.NameFlagDoNotQueue)
+	if err != nil {
+		return err
+	}
+	if reply != dbus.RequestNameReplyPrimaryOwner {
+		return fmt.Errorf("Name '%s' has exists", dbusName)
+	}
+	return nil
 }
 
 func (s *Server) makeProps() map[string]map[string]*prop.Prop {
