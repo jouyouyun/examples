@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=org.jouyouyun.Test
+Exec=/usr/local/bin/dbus_test_server
