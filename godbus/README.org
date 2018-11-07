@@ -1,3 +1,5 @@
+#+OPTIONS: tic:nil
+#+OPTIONS: ^:{}
 * godbus
 
 Test =github.com/godbus/dbus= library, contains server and client.
