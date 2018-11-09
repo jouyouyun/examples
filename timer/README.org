@@ -1,0 +1,19 @@
+* Implement a timer by libc
+
+There use =timer_create= and =timer_delete= from =time.h= to implement timer.
+
+** SYNOPSIS
+
+#+BEGIN_SRC c
+       #include <signal.h>
+       #include <time.h>
+
+       int timer_create(clockid_t clockid, struct sigevent *restrict evp,
+           timer_t *restrict timerid);
+       int timer_delete(timer_t timerid);
+#+END_SRC
+
+=clockid= use =CLOCK_MONOTONIC=, a nonsettable monotonically increasing clock
+that measures time from some unspecified point in the past that does not change after system startup.
+
+=sevp.sigev_notify= try =SIGEV_SIGNAL= and =SIGEV_THREAD= to implement.
