@@ -81,7 +81,7 @@ int sigaction(int sig, const struct sigaction *restrict act,
 |------------------------------------+--------------+----------------------------------------------------------|
 | void(*) (int)                      | sa_handler   | 处理函数指针，同 signal 函数中的 =func= 参数             |
 | sigset_t                           | sa_mask      | 信号屏蔽字，是指当前被阻塞的一组信号，不能被当前进程收到 |
-| int                                | sa_flags     | 处理行为修改器，指明哪种处理函数生效，相见下文           |
+| int                                | sa_flags     | 处理行为修改器，指明哪种处理函数生效，详见下文           |
 | void(*) (int, siginfo_t *, void *) | sa_sigaction | 处理函数指针，仅 sa_flags == SA_SIGINFO 时有效           |
 
 其中 =sa_flags= 主要可以设置为以下值：
