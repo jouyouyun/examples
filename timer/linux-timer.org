@@ -1,0 +1,349 @@
+#+OPTIONS: toc:nil
+#+OPTIONS: ^:{}
+
+* Linux Timer 示例
+
+定时器在日常编程中被频繁用到, 很多上层库都提供了很简单的使用方法, 如 =glibc= 中 =g_timeout_add_full= 函数.
+但只使用 =libc= 时, 实现起来还是略麻烦的, 所以在此记录下使用方法, 随便也给出一个 =g_timeout_add_full= 的示例.
+
+-----
+
+** glibc
+
+=g_timeout_add_full= 的函数原型为:
+
+#+BEGIN_SRC c
+guint
+g_timeout_add_full (gint priority,
+                    guint interval,
+                    GSourceFunc function,
+                    gpointer data,
+                    GDestroyNotify notify);
+#+END_SRC
+
+- *priority* 为优先级, 默认为 =G_PRIORITY_DEFAULT=
+- *interval* 为定时器的间隔时间
+- *function* 为定时器时间到达后的处理函数, 必须声明为 =gboolean func(gpointer)= 类型, 返回 =FALSE= 表示终止定时器
+- *data* 为处理函数传入的数据
+- *notify* 为定时器终止时的处理函数, 必须声明为 =void func(gpointer data)= 类型
+
+一个简单的示例如下:
+
+#+BEGIN_SRC c
+#include <glib.h>
+#include <signal.h>
+
+struct raw_coord {
+	double x, y;
+};
+
+static guint timeid = 0;
+
+static gboolean
+timeout_handler(gpointer data)
+{
+	struct raw_coord *coord = (struct raw_coord*)data;
+	g_print("Timeout recieved: %u, data: (%f, %f)\n", timeid, coord->x, coord->y);
+	timeid = 0;
+	return FALSE;
+}
+
+static void
+destroy_handler(gpointer data)
+{
+	struct raw_coord *coord = (struct raw_coord*)data;
+	g_print("Timeout destroy: %u, data: (%f, %f)\n", timeid, coord->x, coord->y);
+	timeid = 0;
+	return ;
+}
+
+static void
+sig_handler(int sig)
+{
+	g_print("Recieved signal: %d, cancel timeout: %u\n", sig, timeid);
+	if (timeid == 0) {
+		return;
+	}
+	g_source_remove(timeid);
+}
+
+int
+main(int argc, char *argv[])
+{
+	signal(SIGALRM, sig_handler);
+	g_print("Send SIGALRM to destroy timeout\n");
+
+	struct raw_coord coord = {
+		.x = 5,
+		.y = 10,
+	};
+	timeid = g_timeout_add_full(G_PRIORITY_DEFAULT, 10 * 1000,
+				    timeout_handler, &coord, destroy_handler);
+	g_print("Timeout id: %u\n", timeid);
+
+	g_main_loop_run(g_main_loop_new(NULL, TRUE));
+}
+#+END_SRC
+
+-----
+
+** libc
+
+=libc= 提供了 =timer_create, timer_settime, timer_delete= 等函数来创建设置定时器, 下面将一一介绍.
+
+*** 创建定时器
+
+使用 =timer_create= 函数可以创建一个定时器, 原型如下:
+
+#+BEGIN_SRC c
+int timer_create(clockid_t clockid, struct sigevent *restrict evp,
+           timer_t *restrict timerid);
+#+END_SRC
+
+- *clockid* 用于指定测量时间的方式, 可以设为以下值:
+  - CLOCK_REALTIME
+
+    使用系统实时时钟
+  - CLOCK_MONOTONIC
+
+    一种不可设置的单调递增时钟，用于测量过去某个未指定点的时间，该时间点在系统启动后不会发生变化
+  - CLOCK_PROCESS_CPUTIME_ID
+
+    一个时钟，用于衡量（用户和系统）调用进程（所有线程）消耗的CPU时间
+  - CLOCK_THREAD_CPUTIME_ID
+
+    一个时钟，用于衡量（用户和系统）调用线程消耗的CPU时间
+  - CLOCK_BOOTTIME
+
+    同 =CLOCK_MONOTONIC=, 但不同的是: 在系统挂起后仍然测量时间
+  - CLOCK_REALTIME_ALARM
+
+    同 =CLOCK_REALTIME= 但会在系统挂起后唤醒系统, 调用者必须有 =CAP_WAKE_ALARM= 权限
+  - CLOCK_BOOTTIME_ALARM
+
+    同 =CLOCK_BOOTTIME= 但会在系统挂起后唤醒系统, 调用者必须有 =CAP_WAKE_ALARM= 权限
+- *evp* 用于设定定时器的处理方式及方法, =evp..sigev_notify= 指定处理方式, 可为以下值:
+  - SIGEV_NONE
+
+    当定时器到达时不做处理, 主动使用 =timer_gettime= 监听并处理
+  - SIGEV_SIGNAL
+
+    当定时器到达时发送 =evp.sigev_signo= 指定的信号
+  - SIGEV_THREAD
+
+    当定时器到达时, 开启一个新线程来调用 =evp.sigev_notify_function= 指定的函数
+  - SIGEV_THREAD_ID
+
+    当定时器到达时, 发送一个带有 =evp.sigev_notify_thread_id= 指定线程 =id= 的信号
+- *timerid* 定时器 =id=
+
+链接时需要带上 =-lrt=
+
+-----
+
+*** 设置定时器
+
+使用 =timer_create= 函数设置定时器的间隔时间, 原型如下:
+
+#+BEGIN_SRC c
+int timer_settime(timer_t timerid, int flags,
+           const struct itimerspec *restrict value,
+           struct itimerspec *restrict ovalue);
+#+END_SRC
+
+- *timerid* 创建得到的 =id=
+- *flags* 定时器标志, 设置为 =TIMER_ABSTIME= 时定时器下一次到达的时间为指定的绝对值与当前时钟的差值
+- value 设置定时器的时间间隔信息
+- ovalue 为上次设置的定时器间隔信息
+
+定时器的时间间隔信息是 =struct itimerspec= 类型, 原型如下:
+
+#+BEGIN_SRC c
+           struct timespec {
+               time_t tv_sec;                /* Seconds */
+               long   tv_nsec;               /* Nanoseconds */
+           };
+
+           struct itimerspec {
+               struct timespec it_interval;  /* Timer interval */
+               struct timespec it_value;     /* Initial expiration */
+           };
+#+END_SRC
+
+- *it_value* 为第一次定时器的间隔时间
+- *it_interval* 为第一次之后每次定时器的间隔时间
+- *tv_sec* 为秒数, 值应大于 0
+- *tv_nsec* 为纳秒数, 应小于 1000000000
+
+-----
+
+*** 删除定时器
+
+使用 =timer_create= 函数可以删除一个定时器, 原型如下:
+
+#+BEGIN_SRC c
+int timer_delete(timer_t timerid);
+#+END_SRC
+
+- *timerid* 创建时得到的 =id=
+
+-----
+
+*** 示例如下
+
+下面给出了使用信号和线程处理定时器的代码:
+
+#+BEGIN_SRC c
+#include <time.h>
+#include <signal.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+
+#define CLOCKID CLOCK_REALTIME
+#define SIG SIGALRM
+#define TIMER_DURATION 1000 // 1000ms
+
+static int start_signal_timer(timer_t *id, int sig, int duration);
+static int start_thread_timer(timer_t *id, int duration);
+static int do_start_timer(timer_t *id, struct sigevent *sev, int duration);
+static int stop_timer(timer_t *id);
+static void thread_handler(union sigval);
+static int setup_signal(int sig);
+static void signal_handler(int sig, siginfo_t *si, void *data);
+
+int
+main(int argc, char *argv[])
+{
+	if (argc != 2) {
+		printf("Usage: %s <signal/thread>\n", argv[0]);
+		return -1;
+	}
+	timer_t timerid;
+	int ret = 0;
+	if (strcmp(argv[1], "signal") == 0) {
+		ret = setup_signal(SIG);
+		if (ret == -1) {
+			printf("Failed to setup signal: %s\n", strerror(errno));
+			return -1;
+		}
+		ret = start_signal_timer(&timerid, SIG, TIMER_DURATION);
+	} else if (strcmp(argv[1], "thread") == 0 ){
+		ret = start_thread_timer(&timerid, TIMER_DURATION);
+	}
+	if (ret == -1) {
+		return -1;
+	}
+	printf("Create timer id: %p\n", timerid);
+	printf("Please input 'quit' to exit...\n");
+
+	char buf[1024] = {0};
+	while (1) {
+		printf("Please input: ");
+		scanf("%s", buf);
+		if (strcmp(buf, "quit") == 0) {
+			break;
+		}
+	}
+
+	ret = stop_timer(&timerid);
+	if (ret == -1) {
+		printf("Failed to delete timer: %s\n", strerror(errno));
+	}
+	printf("Exit...\n");
+	return 0;
+}
+
+static int
+start_signal_timer(timer_t *id, int sig, int duration)
+{
+	struct sigevent sev;
+
+	// handle in thread when timeout
+	memset(&sev, 0, sizeof(struct sigevent));
+	sev.sigev_notify = SIGEV_SIGNAL;
+	sev.sigev_signo = sig;
+	sev.sigev_value.sival_int = 111;
+	return do_start_timer(id, &sev, duration);
+}
+
+static int
+start_thread_timer(timer_t *id, int duration)
+{
+	struct sigevent sev;
+
+	// handle in thread when timeout
+	memset(&sev, 0, sizeof(struct sigevent));
+	sev.sigev_notify = SIGEV_THREAD;
+	sev.sigev_notify_function = thread_handler;
+	sev.sigev_value.sival_int = 111;
+	return do_start_timer(id, &sev, duration);
+}
+
+static int
+do_start_timer(timer_t *id, struct sigevent *sev, int duration)
+{
+	struct itimerspec its; // duration settings
+
+	int ret = timer_create(CLOCKID, sev, id);
+	if (ret == -1) {
+		printf("Failed to create timer: %s\n", strerror(errno));
+		return -1;
+	}
+	printf("The timer id: %p\n", id);
+
+	// set timeout, only once
+	// it_value the first timeout duration
+	// it_interval the next timeout duration
+	if (duration >= 1000) {
+		its.it_value.tv_sec = duration / 1000;
+		its.it_value.tv_nsec = (duration%1000) * 1000000;
+	} else {
+		its.it_value.tv_nsec = duration * 1000000;
+	}
+	its.it_interval.tv_sec = its.it_value.tv_sec;
+	its.it_interval.tv_nsec = its.it_value.tv_nsec;
+
+	ret = timer_settime(*id, 0, &its, NULL);
+	if (ret == -1) {
+		printf("Failed to set timeout: %s\n", strerror(errno));
+		return -1;
+	}
+
+	return 0;
+}
+
+static int
+stop_timer(timer_t *id)
+{
+	if (*id == 0) {
+		return 0;
+	}
+	return timer_delete(*id);
+}
+
+static void
+thread_handler(union sigval v)
+{
+	printf("Timer arrived: %d\n", v.sival_int);
+}
+
+static int
+setup_signal(int sig)
+{
+	struct sigaction sa;
+
+	sa.sa_flags = SA_SIGINFO;
+	sa.sa_sigaction = signal_handler;
+	sigemptyset(&sa.sa_mask);
+	return sigaction(sig, &sa, NULL);
+}
+
+static void
+signal_handler(int sig, siginfo_t *si, void *data)
+{
+	printf("Signal arrived: %d\n", sig);
+	printf("\tUid: %u, Pid: %u\n", si->si_uid, si->si_pid);
+	printf("\tValue: %d\n", si->si_value.sival_int);
+}
+#+END_SRC
