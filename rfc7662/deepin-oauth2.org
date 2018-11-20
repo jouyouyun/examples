@@ -1,0 +1,112 @@
+#+OPTIONS: toc:nil
+#+OPTIONS: ^:{}
+
+* Deepin OAuth2 Token
+
+** Token 可用字段
+
+| Name            | Description                                  |
+|-----------------+----------------------------------------------|
+| active          | token 是否有效, 无效时不应返回任何 token 信息  |
+|-----------------+----------------------------------------------|
+| token           | 认证获取到的 token                           |
+|-----------------+----------------------------------------------|
+| token_type_hint | token 来源指示，便于 Server 更快的查找 token |
+|-----------------+----------------------------------------------|
+| scope           | token 的权限范围                             |
+|-----------------+----------------------------------------------|
+| client_id       | client 注册时的 id                           |
+|-----------------+----------------------------------------------|
+| aud             | token 的接受人                               |
+|-----------------+----------------------------------------------|
+| iss             | token 的发行人                               |
+|-----------------+----------------------------------------------|
+| exp             | token 的过期时间                             |
+|-----------------+----------------------------------------------|
+| iat             | token 的下发时间                             |
+|-----------------+----------------------------------------------|
+| nbf             | token 在此时间之前无效                       |
+
+-----
+
+** Token 验证流程
+
+- *Auth:* 代表认证服务器
+- *Client:* 代表应用程序
+- *Resource:* 代表资源服务器
+- *User:* 代表用户
+
+*Resource* 有两种访问方式：
+
+- *User* 直接访问
+- *User* 通过 *Client* 访问
+
+
+*** User 直接访问
+
+1. *User* 访问 *Resource*, *Resource* 向 *Auth* 认证
+2. *Auth* 验证通过后返回 =Access-Token= 的信息
+3. *Resource* 验证 =scope=, 通过后向 *User* 下发 =Private-Token=
+4. *User* 使用 =Private-Token= 操作 *Resource*
+5. *Resource* 验证 =Private-Token= 通过后准许操作
+
+
+*** User 通过 Client 访问
+
+1. *User* 访问 *Client*, *Client* 向 *Auth* 认证
+2. *Auth* 验证通过后返回 =Access-Token= 的信息
+3. *Client* 使用 =Access-Token= 操作 *Resource*
+4. *Resource* 将 =Access-Token= 发向 *Auth* 来获取详细信息
+5. *Resource* 验证 *Auth* 返回的 =Access-Token= 信息, 如 =active=, =scope=
+6. 验证通过后准许 *Client* 的操作
+
+-----
+
+为了 *Resource* 能够区分发来的 =token= 是 *Auth* 下发的还是 *Resource* 下发的, 规定 *Client* 请求时带上 =token_type_hint= 字段, 值设置为 =server=.
+如果为空或是 =private=, 则表示 =token= 是 *Resource* 下发的. 也可以通过 =client_id= 来判断.
+
+其他的字段按需添加.
+
+若 *Resource* 需要验证 =token= 的 =aud=, 则应在 =token= 申请时加上 =aud=, 这个 =token= 就应该在 *Auth* 认证之后再去申请的, 需要指定 =aud=, =client_id= 和 =scope=.
+
+为了便于管理, token 验证放在了 *Auth* 上处理, *Resource* 需要验证 token 时应带上需要的 =scope=, 上面的流程需要修改下.
+
+-----
+
+** Auth 验证 token
+
+*Auth* 检查 =token= 时需要考虑以下情况：
+
+- 如果 token 设置了 expire
+
+  *Auth* 就必须检查 token 是否 expired
+
+- 如果 token 在能够使用之前就被下发
+
+  *Auth* 就必须检查 token 的开始生效时间
+
+- 如果 token 被撤销
+
+  *Auth* 就必须检查 token 是否被撤销
+
+- 如果 token 被签名了
+
+  *Auth* 就必须检查签名的有效性
+
+- 如何 token 只能被某些资源服务器使用
+
+  *Auth* 就必须检查 token 的权限范围
+
+如果上面的任一项失败了, *Auth* 就应该返回 token 无效
+
+-----
+
+** Token Revoke
+
+- 用户 scope 变更
+
+    此时需要先更新 *Auth* 保存的 token 中的 scope, 然后通知 *Resource* 撤销 token (因为 *Resource* 中会保存来自 *Auth* 的 token)
+
+- 用户密码变更
+
+    此时需要先撤销 *Auth* 保存的 token, 然后通知 *Resource* 撤销 token
