@@ -1,0 +1,4 @@
+/bin
+/pkg
+/src/test/go.mod
+/src/test/go.sum
