@@ -6,3 +6,6 @@
 Some library or test examples.
 
 - [[./godbus/README.org][godbus]]
+- [[./GoModule/README.org][GoModule]]
+- [[./signal/README.org][linux signal]]
+- [[./timer/README.org][linux timer]]
