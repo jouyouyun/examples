@@ -1,0 +1,901 @@
+{
+    "areacode": "420900",
+    "orgcode": "420900-000009",
+    "data": [
+        {
+            "id": 1083,
+            "macaddress": "20:1a:06:8c:77:d7",
+            "department": "",
+            "owner": "陈进",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 3380,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1539157392000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 19564,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1539157681072",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 23749,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1541639683629",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 846,
+            "macaddress": "28:d2:44:cb:b7:cb",
+            "department": "shi党建科",
+            "owner": "贺小东",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 2509,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1505893993000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 2511,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1505895813320",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 2510,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1532996175537",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 821,
+            "macaddress": "20:1a:06:aa:9f:7d",
+            "department": "财经科",
+            "owner": "王建平",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 2416,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1539075477000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 19464,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "-28800000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 2417,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1539692771840",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 3292,
+            "macaddress": "68:f7:28:90:30:c5",
+            "department": "副主任",
+            "owner": "胡新平",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 12139,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1464938324000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 12141,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1505705425601",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 59,
+                    "installed_id": 12140,
+                    "name": "360安全卫士",
+                    "version": "11.2.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1510977710553",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 47,
+                    "installed_id": 12142,
+                    "name": "电脑管家12.9",
+                    "version": "12.9.19156.222",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1510105473407",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 5992,
+            "macaddress": "08:9e:01:80:ee:30",
+            "department": "副主任室",
+            "owner": "刘祖怡",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 24454,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1506329147000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 24456,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1506329271684",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 24455,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1533195044097",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 3302,
+            "macaddress": "1c:39:47:27:58:b4",
+            "department": "副主任室",
+            "owner": "杨博",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 13568,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1536567996000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 28,
+                    "installed_id": 13569,
+                    "name": "WPS Office 2016 专业版 (10.8.0.6206)",
+                    "version": "10.8.0.6206",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1536569995406",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 18,
+                    "installed_id": 12172,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2002",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1536628129592",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 809,
+            "macaddress": "08:9e:01:33:b8:56",
+            "department": "改革办",
+            "owner": "陈进",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 2372,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1505724435000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 2375,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1505725598988",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 468,
+                    "installed_id": 27674,
+                    "name": "360安全卫士",
+                    "version": "11.6.0.1002",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1541551278354",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 4933,
+            "macaddress": "74:27:ea:18:ca:81",
+            "department": "经济科",
+            "owner": "经济科",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 19461,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1539076513000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 19463,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1539076996314",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 19462,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1539077234510",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 3331,
+            "macaddress": "20:1a:06:8c:76:f9",
+            "department": "经济科",
+            "owner": "李明",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 12318,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1508154030000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 12321,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1540260568133",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 12319,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1536283926100",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 134,
+                    "installed_id": 12322,
+                    "name": "电脑管家12.14",
+                    "version": "12.14.19590.218",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1536044218759",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 6321,
+            "macaddress": "a8:1e:84:c6:49:a2",
+            "department": "经济科",
+            "owner": "王建平",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 73,
+                    "installed_id": 25840,
+                    "name": "Windows 10 Home China",
+                    "version": "10.0",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1534826924000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 25843,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1524795318186",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 25841,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1532996022076",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 178,
+                    "installed_id": 25842,
+                    "name": "360杀毒",
+                    "version": "5.0.0.8140",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1505444053645",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 610,
+            "macaddress": "08:9e:01:33:b8:1c",
+            "department": "秘书科",
+            "owner": "雷胜林",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 1663,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1509069798000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 1665,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1509070479810",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 1664,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1533625125467",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 647,
+            "macaddress": "f0:4d:a2:ff:72:9c",
+            "department": "秘书科",
+            "owner": "余雪",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 5818,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1534817859000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 5820,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1534818012675",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 5819,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1534819463946",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 3323,
+            "macaddress": "08:9e:01:33:a0:50",
+            "department": "社会科",
+            "owner": "郭殿明",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 12269,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1506046130000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 12271,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1506047399044",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 12270,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1539156763517",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 3296,
+            "macaddress": "28:d2:44:ce:f2:1a",
+            "department": "社会科",
+            "owner": "刘小双",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 13565,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1536568534000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 28,
+                    "installed_id": 13567,
+                    "name": "WPS Office 2016 专业版 (10.8.0.6206)",
+                    "version": "10.8.0.6206",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1536571331912",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 18,
+                    "installed_id": 13566,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2002",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1537277924672",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 829,
+            "macaddress": "28:d2:44:d1:74:7c",
+            "department": "市财经办",
+            "owner": "彭保",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 2442,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1506043837000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 22893,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1540536828288",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 2443,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1533020584654",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 842,
+            "macaddress": "20:1a:06:8c:77:a5",
+            "department": "市党建科",
+            "owner": "",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 2493,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1505701139000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 2495,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1505702550911",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 2494,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1533081262759",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 61,
+                    "installed_id": 2496,
+                    "name": "电脑管家12.9",
+                    "version": "12.9.19161.223",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1515743489479",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 832,
+            "macaddress": "08:9e:01:33:a3:f9",
+            "department": "市改革办",
+            "owner": "喻修银",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 2453,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1506049200000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 24404,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1537844929511",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 2454,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1533103552383",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 178,
+                    "installed_id": 24403,
+                    "name": "360杀毒",
+                    "version": "5.0.0.8140",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1506063773089",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 1086,
+            "macaddress": "12:f1:a1:ca:7c:48",
+            "department": "市委编辑部",
+            "owner": "管晗",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 3391,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1506045932000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 3393,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1506046112962",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 3392,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1513217848622",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 1085,
+            "macaddress": "00:23:24:9c:c8:21",
+            "department": "市委主任科室",
+            "owner": "唐菲",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 3387,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1521101811000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 3389,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1521102063085",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 3388,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1533605255674",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        },
+        {
+            "id": 3295,
+            "macaddress": "08:9e:01:33:b9:a0",
+            "department": "室主任",
+            "owner": "邹建宏",
+            "computer_brand": "",
+            "softwares": [
+                {
+                    "id": 56,
+                    "installed_id": 12149,
+                    "name": "Windows 7 Professional",
+                    "version": "6.1",
+                    "category": "os",
+                    "authorized": 1,
+                    "installation_time": "1506738513000",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 71,
+                    "installed_id": 12151,
+                    "name": "WPS Office 2016 专业版 (10.8.0.5715)",
+                    "version": "10.8.0.5715",
+                    "category": "office",
+                    "authorized": 1,
+                    "installation_time": "1506738966347",
+                    "licensing_period": "",
+                    "copyright": ""
+                },
+                {
+                    "id": 57,
+                    "installed_id": 12150,
+                    "name": "360安全卫士",
+                    "version": "11.4.0.2001",
+                    "category": "antivirus",
+                    "authorized": 1,
+                    "installation_time": "1533774368247",
+                    "licensing_period": "",
+                    "copyright": ""
+                }
+            ]
+        }
+    ]
+}
