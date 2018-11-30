@@ -9,9 +9,13 @@ import (
 	"time"
 )
 
+var (
+	defaultTimeout = time.Second * 30
+)
+
 func Get(key string) ([]byte, error) {
 	fmt.Println("[Get] key:", key)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 	reader, err := bucket.NewReader(ctx, key)
 	if err != nil {
@@ -27,7 +31,7 @@ func List(dir string) ([]string, error) {
 	var iter = bucket.List(&opts)
 	var ret []string
 	for {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 		obj, err := iter.Next(ctx)
 		cancel()
 		if err != nil {
@@ -45,7 +49,32 @@ func List(dir string) ([]string, error) {
 
 func Delete(key string) error {
 	fmt.Println("[Delete] key:", key)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 	return bucket.Delete(ctx, key)
+}
+
+// Size return the key size(byte), if key is dir, will recursion
+func Size(key string) (uint64, error) {
+	var iter = bucket.List(&blob.ListOptions{Prefix: key})
+	var size uint64
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+		item, err := iter.Next(ctx)
+		cancel()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return 0, err
+		}
+		if item.Size != 0 {
+			size += uint64(item.Size)
+			continue
+		}
+		// if size == 0 maybe is dir in upyun
+		s, _ := Size(item.Key + "/")
+		size += s
+	}
+	return size, nil
 }
