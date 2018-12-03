@@ -30,12 +30,12 @@ def parseRange(range):
     Parse range to get minCol, maxCol, minRow, maxRow
     """
     if range.find(":") == -1:
-        return range[0], range[0], int(range[1]), int(range[1])
+        return range[0], range[0], int(range[1:]), int(range[1:])
 
     list = range.split(":")
     if len(list) != 2:
         return None, None, None, None
-    return list[0][0], list[1][0], int(list[0][1]), int(list[1][1])
+    return list[0][0], list[1][0], int(list[0][1:]), int(list[1]:[1])
 
 def setStyleForRange(ws, range, border=Border(), font=None, alignment=None):
     minCol, maxCol, minRow, maxRow = parseRange(range)

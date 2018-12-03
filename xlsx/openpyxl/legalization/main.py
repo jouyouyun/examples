@@ -3,7 +3,9 @@
 
 import sys
 import json
-import legalization
+from legalization import Legalization
+from machines import Machines
+from overview import Overview
 
 def usage():
     print("""This proccess generate legalization standing book(machines or overview).
@@ -20,7 +22,7 @@ def loadFile(filename):
         return None
     return infos
 
-if __name__ == "__main__":
+def main():
     if len(sys.argv) != 4:
         usage()
 
@@ -28,7 +30,14 @@ if __name__ == "__main__":
     if infos == None:
         sys.exit(-1)
 
+    lega = Legalization()
     if sys.argv[1] == "machines":
-        legalization.genFile(infos, sys.argv[3])
+        lega = Machines(infos)
     elif sys.argv[1] == "overview":
-        pass
+        lega = Overview(infos)
+
+    lega.generate_file(sys.argv[3])
+    return
+
+if __name__ == "__main__":
+    main()
