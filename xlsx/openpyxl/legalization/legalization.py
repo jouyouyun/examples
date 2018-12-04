@@ -59,7 +59,10 @@ class Legalization(object):
         if data == None:
             return '单位名称（盖章）：_________   填表人：_______   联系电话：___________    填表日期：____ 年  __ 月 __ 日'
 
-        s = '单位名称（盖章）：_________   填表人：'
+        org_name = data['orgname']
+        if len(org_name) == 0:
+            org_name = '_________'
+        s = '单位名称（盖章）：' + org_name + '   填表人：'
         applicant = data['applicant']
         if len(applicant) == 0:
             applicant = '_________'

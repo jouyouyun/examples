@@ -72,7 +72,7 @@ class Machines(Legalization):
         self.set_range_style('A6:F'+end_str, border=self.border_thin, 
                 font=self.font_common, align=self.alignment_center)
         self.set_range_style('G6:G'+end_str, border=self.border_thin, 
-                align=self.alignment_center)
+                align=self.alignment_left)
         self.set_range_style('H6:H'+end_str, border=self.border_thin, 
                 font=self.font_common, align=self.alignment_center)
         self.set_range_style('I6:I'+end_str, border=self.border_thin, 
