@@ -9,7 +9,7 @@
 type User struct {
 	ID        int        `gorm:"TYPE:int(11);NOT NULL;PRIMARY_KEY;INDEX"`
 	Name      string     `gorm:"TYPE: VARCHAR(255); DEFAULT:'';INDEX"`
-	Companies []Company  `gorm:"ForeignKey:UserId;AssociationForeignKey:ID"`
+	Companies []Company  `gorm:"FOREIGNKEY:UserId;ASSOCIATION_FOREIGNKEY:ID"`
 	CreatedAt time.Time  `gorm:"TYPE:DATETIME"`
 	UpdatedAt time.Time  `gorm:"TYPE:DATETIME"`
 	DeletedAt *time.Time `gorm:"TYPE:DATETIME;DEFAULT:NULL"`
@@ -24,7 +24,33 @@ type Company struct {
 }
 #+END_SRC
 
-在查询 =User= 时希望把 =Company= 的信息也一并查询, 方法如下:
+在查询 =User= 时希望把 =Company= 的信息也一并查询, 有以下三种方法:
+
+** Related
+
+使用 =Related= 方法, 需要把把 =User= 查询好, 然后根据 =User= 定义中指定的 =FOREIGNKEY= 去查找 =Company=, 如果没定义, 则调用时需要指定, 如下:
+
+#+BEGIN_SRC go
+var u User
+db.First(&u)
+db.Model(&u).Related(&u.Companies).Find(&u.Companies)
+#+END_SRC
+
+=User= 列表时遍历列表一一查询 =Company=
+
+** Association
+
+使用 =Association= 方法, 需要把把 =User= 查询好, 然后根据 =User= 定义中指定的 =AssociationForeignKey= 去查找 =Company=, *必须定义*, 如下:
+
+#+BEGIN_SRC go
+var u User
+db.First(&u)
+db.Model(&u).Association("Companies").Find(&u.Companies)
+#+END_SRC
+
+** Preload
+
+使用 =Preload= 方法, 在查询 =User= 时先去获取 =Company= 的记录, 如下:
 
 #+BEGIN_SRC go
 // 查询单条 user
@@ -41,3 +67,7 @@ db.Debug().Preload("Companies").Find(&list)
 // SELECT * FROM users;
 // SELECT * FROM companies WHERE user_id IN (1,2,3...);
 #+END_SRC
+
+-----
+
+本文中是一对多, 一对一的也是类似的, 完整代码见: [[https://github.com/jouyouyun/examples/tree/master/gorm/related][GORM Related]]
