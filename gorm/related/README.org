@@ -1,0 +1,43 @@
+#+OPTIONS: toc:nil
+#+OPTIONS: ^:{}
+
+* GORM 关联查询
+
+定义了一个 =User= 和 =Company=, =User= 中可以包含多个 =Company=, 如下:
+
+#+BEGIN_SRC go
+type User struct {
+	ID        int        `gorm:"TYPE:int(11);NOT NULL;PRIMARY_KEY;INDEX"`
+	Name      string     `gorm:"TYPE: VARCHAR(255); DEFAULT:'';INDEX"`
+	Companies []Company  `gorm:"ForeignKey:UserId;AssociationForeignKey:ID"`
+	CreatedAt time.Time  `gorm:"TYPE:DATETIME"`
+	UpdatedAt time.Time  `gorm:"TYPE:DATETIME"`
+	DeletedAt *time.Time `gorm:"TYPE:DATETIME;DEFAULT:NULL"`
+}
+
+type Company struct {
+	gorm.Model
+	Industry int    `gorm:"TYPE:INT(11);DEFAULT:0"`
+	Name     string `gorm:"TYPE:VARCHAR(255);DEFAULT:'';INDEX"`
+	Job      string `gorm:"TYPE:VARCHAR(255);DEFAULT:''"`
+	UserId   int    `gorm:"TYPE:int(11);NOT NULL;INDEX"`
+}
+#+END_SRC
+
+在查询 =User= 时希望把 =Company= 的信息也一并查询, 方法如下:
+
+#+BEGIN_SRC go
+// 查询单条 user
+var u User
+db.Debug().Preload("Companies").First(&u)
+// 对应的 sql 语句
+// SELECT * FROM users LIMIT 1;
+// SELECT * FROM companies WHERE user_id IN (1);
+
+// 查询所有 user
+var list []User
+db.Debug().Preload("Companies").Find(&list)
+// 对应的 sql 语句
+// SELECT * FROM users;
+// SELECT * FROM companies WHERE user_id IN (1,2,3...);
+#+END_SRC
