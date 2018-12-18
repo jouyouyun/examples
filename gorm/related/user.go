@@ -53,6 +53,18 @@ func main() {
 	db.Debug().AutoMigrate(&Company{})
 	db.Debug().Create(&User{ID: 1, Name: "admin"})
 	db.Debug().Create(&User{ID: 2, Name: "jouyouyun"})
+	var tmp User
+	db.Debug().Where(User{ID: 2}).Assign(User{Name: "deepin"}).FirstOrInit(&tmp)
+	fmt.Println("[Assign] FirstOrInit:", tmp)
+	tmp = User{}
+	db.Debug().Where(User{ID: 3}).Assign(User{Name: "deepin"}).FirstOrInit(&tmp)
+	fmt.Println("[Assign] FirstOrInit not found:", tmp)
+	tmp = User{}
+	db.Debug().Where(User{ID: 2}).Assign(User{Name: "jouyouyun"}).FirstOrCreate(&tmp)
+	fmt.Println("[Assign] FirstOrCreate found:", tmp)
+	tmp = User{}
+	db.Debug().Where(User{ID: 4}).Assign(User{Name: "deepin"}).FirstOrCreate(&tmp)
+	fmt.Println("[Assign] FirstOrCreate not found:", tmp)
 	db.Debug().Where(Company{UserId: 1, Name: "deepin"}).FirstOrCreate(&Company{}, Company{
 		UserId:   1,
 		Industry: 1,
