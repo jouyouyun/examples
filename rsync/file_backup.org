@@ -1,0 +1,86 @@
+#+OPTIONS: toc:nil
+#+OPTIONS: ^:{}
+
+* Auto Backup Files by RSync
+
+=rsync= 是一个强大的文件复制工具, 支持加密, 断点续传, 增量备份等功能.
+
+下面将用它来配置一个文件同步的服务, 通过 =ssh= 来登录.
+
+** SSH 免密登录
+
+首先设置 =ssh= 自动登录, 这就需要把 =client= 的 =id_rsa.pub= 放入到 =server= 的 =authorized_keys= 中, 操作如下:
+
+- client
+
+#+BEGIN_SRC shell
+# 先生成 id_rsa.pub, 会提示默认的文件路径是 $HOME/.ssh/id_rsa
+# 执行成功后, 会看到 $HOME/.ssh/id_rsa $HOME/.ssh/id_rsa.pub 2个文件
+$ ssh-keygen -t rsa
+
+# 负责 id_rsa.pub 到服务器
+$ scp $HOME/.ssh/id_rsa.pub <user>@<server>:~/
+#+END_SRC
+
+- server
+
+#+BEGIN_SRC shell
+# 将 client 的 id_rsa.pub 保存到 authorized_keys 中
+$ cat $HOME/id_rsa.pub >> authorized_keys
+#+END_SRC
+
+做完这些, 再在 =client= 通过 =ssh= 登录 =server= 时就可以免密了.
+
+
+** rsync 服务端配置
+
+新建 =/etc/rsyncd.conf= 指定配置信息, 一个简单的例子如下:
+
+#+BEGIN_SRC shell
+uid = nobody
+gid = nobody
+max connections = 10
+pid file = /var/run/rsyncd.pid
+
+[backup1]
+    path = /opt/backup
+    comment = The 1 backup data
+    auth users=backup
+    secrets file=/etc/rsyncd.secrets
+#+END_SRC
+
+这样就定义了一个备份模块 =backup1=, 客户端就可以使用 =rsync -a --delete <user>@<server>::backup1 /opt/backup1= 来同步文件
+
+其中 =auth= 和 =secrets= 这2行是配置安全认证的, 如不需要就去掉, 但建议开启.
+
+=/etc/rsyncd.secrets= 的格式如下:
+
+#+BEGIN_SRC shell
+$ cat /etc/rsyncd.secrets
+backup:abc123
+#+END_SRC
+
+
+** rsync 客户端配置
+
+如果服务端开启了认证, 客户需要指定密码文件, 如不指定就需要手动输入了, 自动同步时还是需要指定密码文件的, 文件中只存放密码, 这与 =server= 不同, 如下:
+
+#+BEGIN_SRC shell
+$ cat /etc/rsyncd.secrets
+abc123
+#+END_SRC
+
+同步的命令为: =rsync -a --delete <user>@<server>::backup1 /opt/backup1 --password-file=/etc/rsyncd.secrets=
+
+配置好后, 客户端通过 =cron= 定时任务来同步文件, 添加一个脚本来处理, 如:
+
+#+BEGIN_SRC shell
+#!/bin/bash
+rsync -a --delete <user>@<server>::backup1 /opt/backup1 --password-file=/etc/rsyncd.secrets
+#+END_SRC
+
+=cron= 提供了每小时, 每天, 每周, 每月同步的便携方式, 将脚本放入对应的目录即可, 若是其他的方式就需要自己写了.
+
+-----
+
+*注意:* 不论是服务端还是客户端 =rsyncd.conf, rsyncd.secrest= 的文件权限必须设为 =0600=
