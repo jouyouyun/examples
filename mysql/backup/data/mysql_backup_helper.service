@@ -1,0 +1,15 @@
+[Unit]
+Description=MySQL Backup Helper
+ConditionFileIsExecutable=/usr/bin/mysql_backup_helper
+ConditionFileNotEmpty=/usr/share/mysql-backup-helper/config.json
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+PIDFile=/tmp/mysql_backup_helper.pid
+ExecStart=/usr/bin/mysql_backup_helper -c /usr/share/mysql-backup-helper/config.json
+ExecStop=/usr/bin/killall mysql_backup_helper
+
+[Install]
+WantedBy=multi-user.target
