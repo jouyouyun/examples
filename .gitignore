@@ -4,3 +4,6 @@ a.out
 
 __pycache__
 test.xlsx
+
+node_modules
+/vue/*/package-lock.json

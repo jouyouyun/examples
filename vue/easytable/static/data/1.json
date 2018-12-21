@@ -1,0 +1,32 @@
+[
+  {
+    "id": "CD001",
+    "name": "Lenovo X230",
+    "owner": "Joy",
+    "os": "deepin 15.8",
+    "office": [
+      "WPS Office 2017",
+      "Microsoft Office 2003"
+    ]
+  },
+  {
+    "id": "CD002",
+    "name": "Lenovo V470",
+    "owner": "May",
+    "os": "deepin 15.5",
+    "office": [
+      "WPS Office 2016",
+      "Yozo Office 2016",
+      "Microsoft Office 2003"
+    ]
+  },
+  {
+    "id": "CD003",
+    "name": "Acer E471G",
+    "owner": "May",
+    "os": "deepin 15.5",
+    "office": [
+      "Microsoft Office 2013"
+    ]
+  }
+]
