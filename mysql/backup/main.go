@@ -44,6 +44,7 @@ func main() {
 		return
 	}
 
+	bak.Clean()
 	bak.StartLoop()
 }
 

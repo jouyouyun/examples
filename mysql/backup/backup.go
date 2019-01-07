@@ -55,6 +55,7 @@ func (bak *Backup) Backup() {
 	if err != nil {
 		fmt.Println("[Error] Failed to exec backup:", err)
 	}
+	bak.Clean()
 }
 
 func (bak *Backup) Clean() {
