@@ -1,0 +1,128 @@
+#+OPTIONS: toc:nil
+#+OPTIONS: ^:{}
+
+* Docker 使用笔记
+
+** 简介
+
+=Docker= 是一个开源容器引擎, 可以打包应用到一个的容器中, 然后运行在任何 =Linux= 机器上, 是一种虚拟化技术.
+容器是完全使用沙箱机制，相互之间不会有任何接口。
+
+** 基础概念
+
+使用 =Docker= 需要理解 =image= 和 =container= 这两个概念. =image= 即是应用根据 =Dockerfile= 规则生成的, 而 =container= 则是运行的 =image=.
+
+*** image
+
+**** 创建
+
+=image= 是从 =Dockerfile= 文件中创建的, 使用 =docker build= 命令, 详细的使用方法见: [[https://docs.docker.com/engine/reference/builder/][Dockerfile reference]].
+
+=docker build -t <name>[:<version>] -f <dockerfile>=
+
+**** Tag
+
+=docker tag= 标记本地镜像，将其归入某一仓库
+
+=docker tag [OPTIONS] IMAGE[:TAG] [REGISTRYHOST/][USERNAME/]NAME[:TAG]=
+
+**** Run
+
+=docker run= 可以运行本地镜像
+
+=docker run [OPTIONS] IMAGE [COMMAND] [ARG...]=
+
+**** Pull
+
+=docker pull= 可以从镜像服务器拉取已经创建好的镜像
+
+=docker pull [OPTIONS] NAME[:TAG|@DIGEST]=
+
+**** Push
+
+=docker push= 可以把本地镜像推送到镜像服务器中
+
+=docker push [OPTIONS] NAME[:TAG]=
+
+
+**** Login
+
+有些镜像服务器开启了用户认证, 则需要用 =docker login= 登录后才能访问
+
+=docker login [OPTIONS] [SERVER]=
+
+=docker logout [OPTIONS] [SERVER]=
+
+**** 常用命令
+
+- 列出镜像
+  =docker images=
+- 删除镜像
+  =docker rmi <IMAGE>=
+- 打包镜像
+  =docker save <IMAGE> > filename=
+- 加载镜像
+  =docker load < filename=
+- 导入
+  =docker import [OPTIONS] file|URL|- [REPOSITORY[:TAG]]=
+- 清理 =none= 镜像
+  =docker rmi $(docker images -f "dangling=true" -q)=, 相见: [[https://www.projectatomic.io/blog/2015/07/what-are-docker-none-none-images/][what-are-docker-none-none-images]]
+
+*** container
+
+**** 创建
+
+=docker create= 创建一个容器但不执行, 语法同 =docker run=
+
+**** 运行状态控制
+
+- 启动
+  =docker start [OPTIONS] CONTAINER [CONTAINER...]=
+- 停止
+  =docker stop [OPTIONS] CONTAINER [CONTAINER...]=
+- 重启
+  =docker restart [OPTIONS] CONTAINER [CONTAINER...]=
+- 暂停
+  =docker pause [OPTIONS] CONTAINER [CONTAINER...]=
+- 恢复
+  =docker unpause [OPTIONS] CONTAINER [CONTAINER...]=
+
+**** 进入
+
+=docker exec= 可以进入正在运行的容器
+
+=docker exec [OPTIONS] CONTAINER COMMAND [ARG...]=
+
+如: =docker exec -it mynginx /bin/bash=
+
+也可以让容器执行容器内的脚本, 如: =docker exec -it mynginx /bin/sh /root/runoob.sh=
+
+**** 终止
+
+=docker kill= 终止容器, 可以发送指定的信号
+
+=docker kill [OPTIONS] CONTAINER [CONTAINER...]=
+
+**** 常用命令
+
+- 列出容器
+  =docker ps=
+- 删除容器
+  =docker rm <CONTAINER>=
+- 查看日志
+  =docker logs <CONTAINER>=
+- 导出
+  =docker export -o <output filename> <CONTAINER>=
+
+
+** Docker Compose
+
+往往一个服务不是一个镜像就能够提供的, 而是由多个镜像一起来提供的, 这是就可以使用 =docker-compose= 来组合镜像并提供服务.
+
+=docker-compose= 通过 =docker-compose.yml= 文件来组合镜像, 通过 =docker-compose pull= 拉取需要的镜像,
+通过 =docker-compose up= 启动服务, 通过 =docker-compose down= 终止服务.
+
+** 参考文档
+
++ [[https://yeasy.gitbooks.io/docker_practice/content/][Docker — 从入门到实践]]
++ [[https://www.projectatomic.io/blog/2015/07/what-are-docker-none-none-images/][what-are-docker-none-none-images]]
