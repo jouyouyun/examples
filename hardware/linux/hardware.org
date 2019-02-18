@@ -1,0 +1,51 @@
+#+OPTIONS: toc:nil ^:{} timestamp:nil
+
+* 系统信息
+
+搜集当前系统的软硬件信息, 然后归类保存
+
+** 软件信息
+
+*** OS
+
+- 发行版, 版本
+  =/etc/os-release, /etc/deepin-version, /etc/debian_version=
+- 主机名
+  =/etc/hostname=
+
+** 硬件信息
+
+*** BIOS
+
+需要 =root= 权限, =/sys/class/dmi/id/= 目录下以 =bios_= 开头的文件
+
+*** 主板
+
+需要 =root= 权限, =/sys/class/dmi/id/= 目录下以 =board_= 开头的文件
+
+=/sys/class/dmi/id/= 目录下以 =product_= 开头的文件是此产品的信息, 其中 =product_uuid= 作为设备标识
+
+*** CPU
+
+=/proc/cpuinfo= 中的 =model name=, *注意:* 不同的 =cpu architecture= 的字段可能不同, 如神威, 龙芯
+
+*** 内存
+
+=/proc/meminfo= 中的 =MemTotal=
+
+*** 硬盘
+
+通过 =lsblk= 来获取
+
+*** 网卡
+
+=/sys/class/net/= 下
+
+或者使用 =iw/ip= 等命令获取
+
+需要过滤的设备
+
+- =lo=
+- =/sys/class/net/<iface>/uevent= 中过滤 =DEVTYPE= 为 =bridge=
+
+*另外:* =/sys/class/net/enp0s25/device/uevent= 中 =DRIVER= 也可以作为过滤条件
