@@ -25,6 +25,7 @@ File::~File()
 
 string File::GetContents()
 {
+    // TODO(jouyouyun): handle exception
     string contents ((istreambuf_iterator<char>(fs)),
                      istreambuf_iterator<char>());
     return contents;
@@ -34,6 +35,7 @@ string File::GetKey(const string& key, const string delim,
                  const int num)
 {
     string value;
+    // TODO(jouyouyun): handle exception
     fs.seekp(ios::beg);
 
     string line;
