@@ -51,6 +51,7 @@ void DumpNetworkDevice(dsinfo::SystemInfo *sys_info)
     vector<dsinfo::NetDevInfo>::iterator iter = devList.begin();
     for (; iter != devList.end(); iter++) {
         cout<<"\tIFace: "<<iter->iface<<", mac: "<<iter->macaddress<<endl;
+        cout<<"\t\tIP: "<<iter->address<<endl;
     }
 }
 

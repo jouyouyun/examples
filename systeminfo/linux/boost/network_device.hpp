@@ -12,6 +12,7 @@ namespace dmcg {
             typedef struct _NetworkDeviceInfo {
                 string iface;
                 string macaddress;
+                string address;
             } NetDevInfo;
 
             class NetworkDevice {
@@ -27,6 +28,7 @@ namespace dmcg {
                 void ScanDir(const string& filepath, vector<string>& ifaces);
                 void FilterByName(vector<string>& ifaces);
                 void FilterByDevType(vector<string>& ifaces);
+                void GetIfaceAddress(const string& name, string& addr);
             };
         } // namespace systeminfo
     } // namespace module

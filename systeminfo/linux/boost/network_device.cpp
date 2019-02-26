@@ -6,6 +6,13 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <arpa/inet.h>
+
 namespace dmcg {
     namespace module {
         namespace systeminfo {
@@ -103,6 +110,7 @@ namespace dmcg {
                 string addr = f.LoadContent();
                 al::trim_right_if(addr, al::is_any_of("\n"));
                 info.macaddress = addr;
+                GetIfaceAddress(info.iface, info.address);
             }
 
             void NetworkDevice::ScanDir(const string& filepath, vector<string>& ifaces)
@@ -125,6 +133,29 @@ namespace dmcg {
                     }
                 }
                 return;
+            }
+
+            void NetworkDevice::GetIfaceAddress(const string& name,
+                                                       string& addr)
+            {
+                int fd;
+                struct ifreq ifr;
+
+                fd = socket(AF_INET, SOCK_DGRAM, 0);
+                if (fd == -1) {
+                    cout<<"open socket failed"<<endl;
+                    return;
+                }
+
+                // must init ifr
+                memset(&ifr, 0, sizeof(ifr));
+                ifr.ifr_addr.sa_family = AF_INET;
+                strncpy(ifr.ifr_name, name.c_str(), IFNAMSIZ-1);
+                ioctl(fd, SIOCGIFADDR, &ifr);
+                close(fd);
+
+                char *c_addr = inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
+                addr = string(c_addr);
             }
         }
     }
