@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+  <interface name="com.deepin.lastore.Manager">
+    <method name="CleanArchives">
+      <arg name="job" type="o" direction="out"/>
+    </method>
+    <method name="CleanJob">
+      <arg name="jobId" type="s" direction="in"/>
+    </method>
+    <method name="DistUpgrade">
+      <arg name="job" type="o" direction="out"/>
+    </method>
+    <method name="FixError">
+      <arg name="errType" type="s" direction="in"/>
+      <arg name="job" type="o" direction="out"/>
+    </method>
+    <method name="InstallPackage">
+      <arg name="jobName" type="s" direction="in"/>
+      <arg name="packages" type="s" direction="in"/>
+      <arg name="job" type="o" direction="out"/>
+    </method>
+    <method name="PackageDesktopPath">
+      <arg name="pkgId" type="s" direction="in"/>
+      <arg name="desktopPath" type="s" direction="out"/>
+    </method>
+    <method name="PackageExists">
+      <arg name="pkgId" type="s" direction="in"/>
+      <arg name="exist" type="b" direction="out">
+                </arg>
+    </method>
+    <method name="PackageInstallable">
+      <arg name="pkgId" type="s" direction="in"/>
+      <arg name="installable" type="b" direction="out"/>
+    </method>
+    <method name="PackagesDownloadSize">
+      <arg name="packages" type="as" direction="in"/>
+      <arg name="size" type="x" direction="out"/>
+    </method>
+    <method name="PauseJob">
+      <arg name="jobId" type="s" direction="in"/>
+    </method>
+    <method name="PrepareDistUpgrade">
+      <arg name="job" type="o" direction="out"/>
+    </method>
+    <method name="RemovePackage">
+      <arg name="jobName" type="s" direction="in"/>
+      <arg name="packages" type="s" direction="in"/>
+      <arg name="job" type="o" direction="out"/>
+    </method>
+    <method name="SetAutoClean">
+      <arg name="enable" type="b" direction="in"/>
+    </method>
+    <method name="SetRegion">
+      <arg name="region" type="s" direction="in"/>
+    </method>
+    <method name="StartJob">
+      <arg name="jobId" type="s" direction="in"/>
+    </method>
+    <method name="UpdatePackage">
+      <arg name="jobName" type="s" direction="in"/>
+      <arg name="packages" type="s" direction="in"/>
+      <arg name="job" type="o" direction="out"/>
+    </method>
+    <method name="UpdateSource">
+      <arg name="job" type="o" direction="out"/>
+    </method>
+    <property name="SystemOnChanging" type="b" access="read"/>
+    <property name="AutoClean" type="b" access="read"/>
+    <property name="JobList" type="ao" access="read"/>
+    <property name="SystemArchitectures" type="as" access="read"/>
+    <property name="UpgradableApps" type="as" access="read"/>
+  </interface>
+</node>

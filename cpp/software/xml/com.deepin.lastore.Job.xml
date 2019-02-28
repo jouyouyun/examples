@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+  <interface name="com.deepin.lastore.Job">
+    <property name="Type" type="s" access="read"/>
+    <property name="Status" type="s" access="read"/>
+    <property name="Speed" type="x" access="read"/>
+    <property name="Cancelable" type="b" access="read"/>
+    <property name="Name" type="s" access="read"/>
+    <property name="Packages" type="as" access="read"/>
+    <property name="DownloadSize" type="x" access="read"/>
+    <property name="Progress" type="d" access="read"/>
+    <property name="Description" type="s" access="read"/>
+    <property name="Id" type="s" access="read"/>
+    <property name="CreateTime" type="x" access="read"/>
+  </interface>
+</node>
