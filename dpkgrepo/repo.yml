@@ -1,0 +1,8 @@
+repository:
+  -
+    uri: http://pools.corp.deepin.com/deepin
+    distribution: stable
+    components:
+      - main
+      - contrib
+      - non-free
