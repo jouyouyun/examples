@@ -20,12 +20,14 @@ public:
 
     std::string name;
     std::string version;
+    std::string architecture;
 };
 
 class SoftwareInfoList
 {
 public:
     SoftwareInfoList();
+    SoftwareInfoList(const std::string &name);
     ~SoftwareInfoList();
     SoftwareInfo *Next();
 private:

@@ -12,7 +12,7 @@ void TestSoftwareExecutor();
 
 int main()
 {
-    // TestSoftwareInfo();
+    TestSoftwareInfo();
     // TestExecutor();
     TestSoftwareExecutor();
 

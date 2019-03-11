@@ -3,9 +3,9 @@ PROG_NAME=software_test
 PWD=$(shell pwd)
 
 CFLAGS=-Wall -g
-LDFLAGS=-lboost_system -lboost_thread
+LDFLAGS=-lboost_system -lboost_filesystem -lboost_thread -lpthread
 
-SRCS := main.cpp software_info.cpp software.cpp executor.cpp
+SRCS := main.cpp software_info.cpp software.cpp executor.cpp task.cpp task_manager.cpp
 
 build: ${PROG_NAME}
 
