@@ -4,6 +4,10 @@
 #include <errno.h>
 #include <string.h>
 #include <boost/algorithm/string.hpp>
+#include <boost/shared_ptr.hpp>
+
+#include "../../runner/task_manager.h"
+#include "../../runner/task.h"
 
 namespace dmcg {
     namespace module {
@@ -86,30 +90,31 @@ namespace dmcg {
 
             void LsblkPrivate::GetLsblkStdout(vector<string> &lines)
             {
-                FILE* stream = NULL;
-                char buf[MAX_BUF_SIZE];
+                namespace drunner = dmcg::module::runner;
+                drunner::TaskManager manager;
+                boost::shared_ptr<drunner::Task> task;
+                string program;
+                vector<string> args;
 
-                stream = popen("lsblk -blp", "r");
-                if (!stream) {
-                    cout<<"Failed to popen lsblk: "<<strerror(errno)<<endl;
-                    return;
-                }
-
-                while(!feof(stream)) {
-                    memset(buf, 0, MAX_BUF_SIZE);
-                    if (fgets(buf, MAX_BUF_SIZE, stream) == NULL) {
-                        continue;
-                    }
-                    string tmp = string(buf);
-                    lines.push_back(string(buf));
-                }
-                pclose(stream);
-
-                if (lines.size() == 0) {
-                    return ;
-                }
-                // erase 'NAME   MAJ:MIN RM         SIZE RO TYPE MOUNTPOINT'
-                lines.erase(lines.begin());
+                program = "lsblk";
+                args.push_back("-blp");
+                task = manager.Create(program, args);
+                task->Finish.connect([&lines](const string & exception,
+                                              int exit_code,
+                                              const string & output,
+                                              const string & error_output) {
+                                         if (!exception.empty()) {
+                                             cout << "Failed to exec lsblk: " << exception<<endl;
+                                             return;
+                                         }
+                                         boost::algorithm::split(lines, output,
+                                                                 boost::algorithm::is_any_of("\n"));
+                                         if (lines.size() > 0) {
+                                             // erase 'NAME   MAJ:MIN RM         SIZE RO TYPE MOUNTPOINT'
+                                             lines.erase(lines.begin());
+                                         }
+                                     });
+                task->Run();
             }
 
             LsblkPartition::LsblkPartition(const string& line)
