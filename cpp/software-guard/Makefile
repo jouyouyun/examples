@@ -3,9 +3,9 @@ PROG_NAME=software_guard
 PWD=$(shell pwd)
 
 CFLAGS=-Wall -g
-LDFLAGS=
+LDFLAGS=-lboost_system -lboost_filesystem -lboost_thread -lpthread
 
-SRCS := main.cpp software_guard.cpp netlink_monitor.cpp blacklist.cpp
+SRCS := main.cpp software_guard.cpp netlink_monitor.cpp blacklist.cpp ../runner/task_manager.cpp ../runner/task.cpp
 
 build: ${PROG_NAME}
 
