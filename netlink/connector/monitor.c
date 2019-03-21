@@ -16,6 +16,7 @@ static int nl_connect();
 static int set_event_listen(int nl_sock, int enabled);
 static int handle_event(int nl_sock);
 static char* get_pid_cmdline(int pid);
+void fix_cmdline(char *buf, size_t num);
 
 int
 main(int argc, char* argv[])
@@ -134,26 +135,26 @@ static int handle_event(int nl_sock)
         case PROC_EVENT_NONE:
             fprintf(stdout, "Set mcast listen ok!\n");
             break;
-        case PROC_EVENT_FORK: {
-            int parent, child;
-            parent = nlcn_msg.ev.event_data.fork.parent_pid;
-            cmdline = get_pid_cmdline(parent);
-            if (!cmdline) {
-                break;
-            }
-            fprintf(stdout, "Fork parent: %d, cmdline: %s\n",
-                    parent, cmdline);
-            free(cmdline);
+        /*case PROC_EVENT_FORK: {*/
+            /*int parent, child;*/
+            /*parent = nlcn_msg.ev.event_data.fork.parent_pid;*/
+            /*cmdline = get_pid_cmdline(parent);*/
+            /*if (!cmdline) {*/
+                /*break;*/
+            /*}*/
+            /*fprintf(stdout, "Fork parent: %d, cmdline: %s\n",*/
+                    /*parent, cmdline);*/
+            /*free(cmdline);*/
 
-            child = nlcn_msg.ev.event_data.fork.child_pid;
-            cmdline = get_pid_cmdline(child);
-            if (!cmdline) {
-                break;
-            }
-            fprintf(stdout, "Fork child: %d, cmdline: %s\n",
-                    child, cmdline);
-            free(cmdline);
-        }
+            /*child = nlcn_msg.ev.event_data.fork.child_pid;*/
+            /*cmdline = get_pid_cmdline(child);*/
+            /*if (!cmdline) {*/
+                /*break;*/
+            /*}*/
+            /*fprintf(stdout, "Fork child: %d, cmdline: %s\n",*/
+                    /*child, cmdline);*/
+            /*free(cmdline);*/
+        /*}*/
         case PROC_EVENT_EXEC:
             pid = nlcn_msg.ev.event_data.exec.process_pid;
             cmdline = get_pid_cmdline(pid);
@@ -193,19 +194,36 @@ get_pid_cmdline(int pid)
         return NULL;
     }
 
+    while(!feof(fr)) {
     memset(buf, 0, 1024);
-    if (!fgets(buf, 1024, fr)) {
-        fclose(fr);
-        if (errno == 0) {
-            return NULL;
+        size_t num = fread(buf, 1, 1024, fr);
+        if (num != strlen(buf)) {
+            fix_cmdline(buf, num);
         }
-        fprintf(stderr, "Failed to read pid file(%s): %s\n",
-                filename, strerror(errno));
-        return NULL;
+        fprintf(stdout, "Read %lu chars: %s\n", num, buf);
     }
+/*    if (!fgets(buf, 1024, fr)) {*/
+        /*fclose(fr);*/
+        /*if (errno == 0) {*/
+            /*return NULL;*/
+        /*}*/
+        /*fprintf(stderr, "Failed to read pid file(%s): %s\n",*/
+                /*filename, strerror(errno));*/
+        /*return NULL;*/
+    /*}*/
     fclose(fr);
 
     content = (char*)calloc(strlen(buf) + 1, 1);
     memcpy(content, buf, strlen(buf));
     return content;
+}
+
+void fix_cmdline(char *buf, size_t num)
+{
+    size_t i = 0;
+    for (; i < num-1; i++) {
+        if (buf[i] == '\0') {
+            buf[i] = ' ';
+        }
+    }
 }
