@@ -1,0 +1,11 @@
+<h2>Dashboard</h2>
+
+<div *ngIf="(list$ | async) as list">
+  <a *ngFor="let item of list" routerLink="{{item.path}}"
+    routerLinkActive="active">{{item.name}}</a>
+</div>
+
+<div>未完待续...</div>
+
+<!-- 为子组件占位, 不然不显示子组件 -->
+<router-outlet></router-outlet>

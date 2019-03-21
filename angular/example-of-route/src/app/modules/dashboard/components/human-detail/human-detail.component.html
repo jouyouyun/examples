@@ -1,0 +1,10 @@
+<h5>Human Detail</h5>
+
+<div *ngIf="(item$ | async) as item">
+  <ul>
+    <li>ID: {{item.id}}</li>
+    <li>Name: {{item.name}}</li>
+    <li>Sex: {{item.sex|sexType}}</li>
+    <li>Email: {{item.email}}</li>
+  </ul>
+</div>
