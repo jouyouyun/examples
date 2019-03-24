@@ -17,6 +17,7 @@ export class ListComponent implements OnInit {
     let sp = this.route.snapshot;
     console.log("[List] init");
     console.log("[List] route:", sp.toString())
+    console.log("[Human List] url:", sp.url.join(','));
     console.log("[List]\tRoot:", sp.root.toString());
     console.log("[List]\tParent:", sp.parent.toString());
     for (let ch of sp.children) {

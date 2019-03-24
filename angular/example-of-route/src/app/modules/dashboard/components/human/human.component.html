@@ -1,7 +1,8 @@
 <h4>Human List</h4>
 
 <div *ngIf="(list$|async) as list">
-  <button *ngFor="let item of list" (click)="goto(item)">{{item.name}}</button>
+  <button *ngFor="let item of list" (click)="goto(item)"
+  [class.focus]="activeID == item.id">{{item.name}}</button>
 </div>
 
 <router-outlet></router-outlet>

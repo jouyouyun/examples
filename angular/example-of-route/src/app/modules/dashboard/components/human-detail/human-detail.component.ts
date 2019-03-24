@@ -22,6 +22,7 @@ export class HumanDetailComponent implements OnInit {
       let sp = this.route.snapshot;
       console.log("[Human Detail] init");
       console.log("[Human Detail] route:", sp.toString())
+      console.log("[Human List] url:", urls.join(','));
       console.log("[Human Detail]\tRoot:", sp.root.toString());
       console.log("[Human Detail]\tParent:", sp.parent.toString());
       for (let ch of sp.children) {
