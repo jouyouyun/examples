@@ -5,6 +5,8 @@
 #include <ios>
 #include <memory>
 
+#include <boost/signals2.hpp>
+
 namespace dmcg
 {
 namespace module
@@ -25,6 +27,9 @@ public:
     void HandleExecEvent(int pid);
     void Loop();
     void Quit();
+
+    boost::signals2::signal<void(const std::string& package)> Kill;
+
 private:
     std::unique_ptr<SoftwareGuardPrivate> d;
 };

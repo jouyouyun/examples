@@ -16,6 +16,9 @@ main(int argc, char *argv[])
     namespace nsoft = dmcg::module::software;
     nsoft::SoftwareGuard guard(argv[1]);
     guard.ReloadBlacklist(argv[1]);
+    guard.Kill.connect([](const string& package){
+            cout<<"Recieved Kill: "<<package<<endl;
+            });
     guard.Loop();
     return 0;
 }

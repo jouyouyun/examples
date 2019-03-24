@@ -123,7 +123,9 @@ void SoftwareGuard::HandleExecEvent(int pid)
     if (rc == -1) {
         //LOG_WARN << "kill proccess pid - " << pid << " failed: " << strerror(errno);
         cout << "kill proccess pid - " << pid << " failed: " << strerror(errno) << endl;
+        return;
     }
+    this->Kill(package);
 }
 
 SoftwareGuardPrivate::SoftwareGuardPrivate(SoftwareGuard *soft_guard): guard(soft_guard)
