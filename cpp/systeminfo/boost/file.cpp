@@ -1,119 +1,131 @@
-#include "file.hpp"
+#include "file.h"
 
 #include <vector>
 #include <exception>
 
 #include <boost/algorithm/string.hpp>
 
-namespace dmcg {
-    namespace module {
-        namespace systeminfo {
-            void StringSplit(vector<string>& list, const string& str,
-                             const string& delim, const int num = 2);
+#include <iostream>
+//#include "modules/log/log.h"
 
-            FilePrivate::FilePrivate(const string& filepath, ios::openmode mode)
-            {
-                fstream *tmp = new fstream;
-                try {
-                    tmp->open(filepath, mode);
-                } catch (exception& e) {
-                    cout<<"Failed to open file:"<< e.what()<<endl;
-                    return;
-                }
+namespace dmcg
+{
+namespace module
+{
+namespace systeminfo
+{
+using namespace std;
+// TODO(jouyouyun): handle exception
 
-                fp = tmp;
-            }
+void StringSplit(vector<string> &list, const string &str,
+                 const string &delim, const int num = 2);
 
-            FilePrivate::~FilePrivate()
-            {
-                if (!fp) {
-                    return;
-                }
-                fp->close();
-                delete fp;
-            }
+FilePrivate::FilePrivate(const string &filepath, ios::openmode mode)
+{
+    fstream *tmp = new fstream;
+    try {
+        tmp->open(filepath, mode);
+    } catch (exception &e) {
+        //LOG_ERROR << "Failed to open file:" << e.what() << endl;
+        cout << "Failed to open file:" << e.what() << endl;
+        return;
+    }
 
-            string FilePrivate::LoadContent()
-            {
-                if (!fp) {
-                    return string("");
-                }
+    fp = tmp;
+}
 
-                istreambuf_iterator<char> begin(*fp);
-                istreambuf_iterator<char> end;
-                string content;
-                try {
-                    content = string(begin, end);
-                }  catch (exception& e) {
-                    cout<<"Failed to load file content:"<<e.what()<<endl;
-                }
+FilePrivate::~FilePrivate()
+{
+    if (!fp) {
+        return;
+    }
+    fp->close();
+    delete fp;
+}
 
-                return content;
-            }
+string FilePrivate::LoadContent()
+{
+    if (!fp) {
+        return string("");
+    }
 
-            string FilePrivate::GetKey(const string& key, const string& delim)
-            {
-                if (!fp) {
-                    return string("");
-                }
+    istreambuf_iterator<char> begin(*fp);
+    istreambuf_iterator<char> end;
+    string content;
+    try {
+        content = string(begin, end);
+    } catch (exception &e) {
+        //LOG_WARN << "Failed to load file content:" << e.what() << endl;
+        cout << "Failed to load file content:" << e.what() << endl;
+    }
 
-                try {
-                    fp->seekp(ios::beg);
-                } catch (exception& e) {
-                    cout<<"Failed to seek file:"<<e.what()<<endl;
-                    return string("");
-                }
+    return content;
+}
 
-                string result;
-                string line;
-                while(getline(*fp, line)) {
-                    vector<string> list;
-                    StringSplit(list, line, delim);
-                    if (list.size() != 2) {
-                        continue;
-                    }
-                    boost::algorithm::trim(list[0]);
-                    if (list[0] != key) {
-                        continue;
-                    }
-                    result = list[1];
-                    break;
-                }
-                boost::algorithm::trim_left_if(result,
-                                          boost::algorithm::is_any_of("\t"));
-                return result;
-            }
+string FilePrivate::GetKey(const string &key, const string &delim)
+{
+    if (!fp) {
+        return string("");
+    }
 
-            void StringSplit(vector<string>& list, const string& str,
-                             const string& delim, const int num)
-            {
-                if (str.empty()) {
-                    return;
-                }
+    try {
+        fp->seekp(ios::beg);
+    } catch (exception &e) {
+        //LOG_WARN << "Failed to seek file:" << e.what() << endl;
+        cout << "Failed to seek file:" << e.what() << endl;
+        return string("");
+    }
 
-                if (delim.empty()) {
-                    list.push_back(str);
-                    return;
-                }
+    string result;
+    string line;
+    while (getline(*fp, line)) {
+        vector<string> list;
+        StringSplit(list, line, delim);
+        if (list.size() != 2) {
+            continue;
+        }
+        boost::algorithm::trim(list[0]);
+        if (list[0] != key) {
+            continue;
+        }
+        result = list[1];
+        break;
+    }
+    boost::algorithm::trim_left_if(result,
+                                   boost::algorithm::is_any_of("\t"));
+    return result;
+}
 
-                string::size_type pos1 = 0, pos2 = 0;
-                int count = 0;
+void StringSplit(vector<string> &list, const string &str,
+                 const string &delim, const int num)
+{
+    if (str.empty()) {
+        return;
+    }
 
-                pos2 = str.find(delim, 0);
-                while (string::npos != pos2) {
-                    if (num - count == 1) {
-                        break;
-                    }
-                    list.push_back(str.substr(pos1, pos2-pos1));
-                    count++;
-                    pos1 = pos2 + delim.size();
-                    pos2 = str.find(delim, pos1);
-                }
+    if (delim.empty()) {
+        list.push_back(str);
+        return;
+    }
 
-                if ((num < 0 || num - count > 0) && string::npos != str.length()) {
-                    list.push_back(str.substr(pos1));
-                }
-            }
-        } // namespace systeminfo
-    } // namespace module
+    string::size_type pos1 = 0, pos2 = 0;
+    int count = 0;
+
+    pos2 = str.find(delim, 0);
+    while (string::npos != pos2) {
+        if (num - count == 1) {
+            break;
+        }
+        list.push_back(str.substr(pos1, pos2 - pos1));
+        count++;
+        pos1 = pos2 + delim.size();
+        pos2 = str.find(delim, pos1);
+    }
+
+    if ((num < 0 || num - count > 0) && string::npos != str.length()) {
+        list.push_back(str.substr(pos1));
+    }
+}
+} // namespace systeminfo
+} // namespace module
 } // namesapce dmcg

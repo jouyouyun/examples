@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
 
-#include "systeminfo.hpp"
+#include "systeminfo.h"
 
 using namespace std;
 
