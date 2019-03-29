@@ -60,7 +60,7 @@ void TestSoftwareInfo()
             break;
         }
         count++;
-        cout << "\tPackage: " << (*it)->name << ", Version: " << (*it)->version << endl;
+        cout << "\tPackage: " << (*it)->name << ", Version: " << (*it)->version << "Architecture" << (*it)->architecture << endl;
     }
     soft.FreeList(infos);
 

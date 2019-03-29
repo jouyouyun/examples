@@ -5,7 +5,7 @@ PWD=$(shell pwd)
 CFLAGS=-Wall -g
 LDFLAGS=-lboost_system -lboost_filesystem -lboost_thread -lpthread
 
-SRCS := main.cpp software_guard.cpp netlink_monitor.cpp blacklist.cpp ../runner/task_manager.cpp ../runner/task.cpp
+SRCS := main.cpp software_guard.cpp software_history.cpp netlink_monitor.cpp blacklist.cpp ../runner/task_manager.cpp ../runner/task.cpp
 
 build: ${PROG_NAME}
 

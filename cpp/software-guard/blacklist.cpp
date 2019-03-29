@@ -55,7 +55,7 @@ bool Blacklist::IsInList(const string &name)
         return false;
     }
 
-    cout<<"-------------[Blacklist] compare: "<<name<<endl;
+    cout << "-------------[Blacklist] compare: " << name << endl;
     vector<string>::iterator it = d->blacklist.begin();
     for (; it != d->blacklist.end(); it++) {
         // Why '*it == name' not working?

@@ -1,6 +1,7 @@
 #include "software_guard.h"
 #include "blacklist.h"
 #include "netlink_monitor.h"
+#include "software_history.h"
 
 #include <errno.h>
 #include <string.h>
@@ -33,21 +34,29 @@ class SoftwareGuardPrivate
 
 public:
     SoftwareGuardPrivate(SoftwareGuard *soft_guard);
-    SoftwareGuardPrivate(SoftwareGuard *soft_guard, const string &blacklist_file);
+    SoftwareGuardPrivate(SoftwareGuard *soft_guard,
+                         const string &whitelist_file,
+                         const string &blacklist_file);
     ~SoftwareGuardPrivate();
 
 private:
-    string GetCmdline(int pid);
-    string GetPackageByCmdline(string cmdline);
+    string GetProgram(int pid);
+    string GetPackage(int pid);
+    string GetPackageByProgram(const string &program);
     string QueryPackageByPath(const string &filepath);
     string QueryPackageForDeepinWine(int pid);
-    void FilterCmdlinePrefix(vector<string> & items);
-    string GetFileContent(const string & filepath);
+    void FilterCmdlinePrefix(vector<string> &items);
+    string GetFileContent(const string &filename);
+    bool IsShell(const string &name);
+    bool IsDeepinWine(const string &name);
 
     SoftwareGuard *guard;
+    unique_ptr<SoftwareHistory> soft_hist;
     unique_ptr<Blacklist> black;
+    unique_ptr<Blacklist> white;
     unique_ptr<NetlinkMonitor> monitor;
     map<string, string> cmdPkgSet;
+    map<int, string> pidPkgSet;
 };
 
 SoftwareGuard::SoftwareGuard()
@@ -55,13 +64,21 @@ SoftwareGuard::SoftwareGuard()
     d = unique_ptr<SoftwareGuardPrivate>(new SoftwareGuardPrivate(this));
 }
 
-SoftwareGuard::SoftwareGuard(const string &blacklist_file)
+SoftwareGuard::SoftwareGuard(const string &whitelist_file,
+                             const string &blacklist_file)
 {
-    d = unique_ptr<SoftwareGuardPrivate>(new SoftwareGuardPrivate(this, blacklist_file));
+    d = unique_ptr<SoftwareGuardPrivate>(new SoftwareGuardPrivate(this,
+                                         whitelist_file,
+                                         blacklist_file));
 }
 
 SoftwareGuard::~SoftwareGuard()
 {}
+
+string SoftwareGuard::DumpSoftwareHistory()
+{
+    return d->soft_hist->Dump();
+}
 
 void SoftwareGuard::ReloadBlacklist(const string &filename)
 {
@@ -71,6 +88,16 @@ void SoftwareGuard::ReloadBlacklist(const string &filename)
 void SoftwareGuard::AppendBlacklist(const string &filename)
 {
     d->black->SetBlacklist(filename, true);
+}
+
+void SoftwareGuard::ReloadWhitelist(const string &filename)
+{
+    d->white->SetBlacklist(filename, false);
+}
+
+void SoftwareGuard::AppendWhitelist(const string &filename)
+{
+    d->white->SetBlacklist(filename, true);
 }
 
 void SoftwareGuard::Loop()
@@ -85,137 +112,201 @@ void SoftwareGuard::Quit()
 
 void SoftwareGuard::HandleExecEvent(int pid)
 {
-    string package;
-
-    cout<<"++++++++++ Start handle: "<<pid<<endl;
-    string cmdline = d->GetCmdline(pid);
-    if (cmdline.empty()) {
-        return;
-    }
-
-    // wine app
-    if (cmdline.find("c:\\") != string::npos ||
-            cmdline.find("C:\\") != string::npos) {
-        package = d->QueryPackageForDeepinWine(pid);    
-    } else {
-        package = d->GetPackageByCmdline(cmdline);
-    }
+    string package = d->GetPackage(pid);
     if (package.empty()) {
         return;
     }
 
-    if (strcmp(package.data(), "deepin-wine") == 0||
-            strcmp(package.data(), "deepin-wine:i386") == 0 ||
-            strcmp(package.data(), "deepin-wine32") == 0 ||
-            strcmp(package.data(), "deepin-wine32-preloader:i386") == 0) {
-        cout<<"---------Deepin Wine: "<<package<<endl;
-        package = d->QueryPackageForDeepinWine(pid);
-    }
+    if (d->black->IsInList(package)) {
+        //LOG_DEBUG << "Kill pid: " << pid;
+        cout << "Kill pid: " << pid << endl;
+        // kill program
+        int rc = kill(pid, SIGTERM);
+        if (rc == -1) {
+            //LOG_WARN << "kill proccess pid - " << pid << " failed: " << strerror(errno);
+            cout << "kill proccess pid - " << pid << " failed: " << strerror(errno) << endl;
+            return;
+        }
 
-    if (!d->black->IsInList(package)) {
+        // emit signal 'Kill(package)'
+        this->Kill(package);
         return;
     }
 
-    //LOG_DEBUG << "Kill pid: " << pid << endl;
-    cout << "Kill pid: " << pid << endl;
-    // kill program
-    int rc = kill(pid, SIGTERM);
-    if (rc == -1) {
-        //LOG_WARN << "kill proccess pid - " << pid << " failed: " << strerror(errno);
-        cout << "kill proccess pid - " << pid << " failed: " << strerror(errno) << endl;
-        return;
+    if (d->white->IsInList(package)) {
+        // record pid --> pkg
+        d->pidPkgSet[pid] = package;
+        // save startup
+        d->soft_hist->SaveStartup(package);
     }
-    this->Kill(package);
+}
+
+void SoftwareGuard::HandleExitEvent(int pid)
+{
+    map<int, string>::iterator it = d->pidPkgSet.find(pid);
+    if (it == d->pidPkgSet.end()) {
+        return ;
+    }
+    string package = string(it->second);
+    // save shutdown
+    d->soft_hist->SaveShutdown(package);
+    d->pidPkgSet.erase(it);
 }
 
 SoftwareGuardPrivate::SoftwareGuardPrivate(SoftwareGuard *soft_guard): guard(soft_guard)
 {
+    soft_hist = unique_ptr<SoftwareHistory>(new SoftwareHistory);
     black = unique_ptr<Blacklist>(new Blacklist);
     monitor = unique_ptr<NetlinkMonitor>(new NetlinkMonitor(guard));
     cmdPkgSet.clear();
+    pidPkgSet.clear();
 }
 
 SoftwareGuardPrivate::SoftwareGuardPrivate(SoftwareGuard *soft_guard,
+        const std::string &whitelist_file,
         const string &blacklist_file): guard(soft_guard)
 {
+    soft_hist = unique_ptr<SoftwareHistory>(new SoftwareHistory);
     black = unique_ptr<Blacklist>(new Blacklist(blacklist_file));
+    white = unique_ptr<Blacklist>(new Blacklist(whitelist_file));
     monitor = unique_ptr<NetlinkMonitor>(new NetlinkMonitor(guard));
     cmdPkgSet.clear();
+    pidPkgSet.clear();
 }
 
 SoftwareGuardPrivate::~SoftwareGuardPrivate()
 {
     cmdPkgSet.clear();
+    pidPkgSet.clear();
 }
 
-string SoftwareGuardPrivate::GetCmdline(int pid)
+string SoftwareGuardPrivate::GetPackage(int pid)
 {
+    string package;
+    string program = GetProgram(pid);
+    if (program.empty()) {
+        return package;
+    }
+
+    // wine app
+    if (program.find("c:\\") != string::npos ||
+            program.find("C:\\") != string::npos) {
+        package = QueryPackageForDeepinWine(pid);
+    } else {
+        package = GetPackageByProgram(program);
+    }
+    if (package.empty()) {
+        return package;
+    }
+
+    if (IsDeepinWine(package)) {
+        package = QueryPackageForDeepinWine(pid);
+    }
+    return package;
+}
+
+string SoftwareGuardPrivate::GetProgram(int pid)
+{
+    fstream fr;
+    char filename[MAX_BUF_SIZE];
     string cmdline;
     string program;
     string first;
+    string arcAppKey("--load-and-launch-app=");
+    bool isARCApp;
     vector<string> items;
     vector<string> tmpList;
-    char filename[MAX_BUF_SIZE] = {0};
 
+    memset(filename, 0, MAX_BUF_SIZE);
     sprintf(filename, "/proc/%d/cmdline", pid);
     cmdline = GetFileContent(filename);
     if (cmdline.empty()) {
         return "";
     }
-    cout<<"==============Content: "<<cmdline<<endl;
 
     // split by char-terminator
-    string tmp(cmdline);
-    boost::algorithm::split(items, cmdline,
-            boost::algorithm::is_any_of(boost::as_array("\0")));
+    namespace ba = boost::algorithm;
+    ba::split(items, cmdline,
+              ba::is_any_of(boost::as_array("\0")));
     FilterCmdlinePrefix(items);
 
     // split by space
-    string googleARCKey("--load-and-launch-app=");
     first = string(items.begin()->data());
-    bool chromeARC = (first.find(googleARCKey) != string::npos);
-    boost::algorithm::split(tmpList, first, boost::algorithm::is_any_of(" "));
-    if (!chromeARC || tmpList.size() < 2) {
+    isARCApp = (first.find(arcAppKey) != string::npos);
+    ba::split(tmpList, first, ba::is_any_of(" "));
+    // google chrome arc app
+    if (!isARCApp || tmpList.size() < 2) {
         first = string(tmpList.begin()->data());
     } else {
-        string tmp1 = string((tmpList.begin()+1)->data());
-        first = tmp1.substr(googleARCKey.length());
+        first = string((tmpList.begin() + 1)->data()).substr(arcAppKey.length());
     }
-    cout<<"===============First:"<<first<<", size: "<<items.size()<<endl;
 
-    // if not found in $PATH return empty
     program = boost::process::search_path(first).string();
     if (program.empty()) {
         program = first;
     }
-    cout << "Cmdline path: " << program << ", from: '" << tmp << "'" << endl;
+
     return program;
 }
 
-string SoftwareGuardPrivate::GetPackageByCmdline(string cmdline)
+string SoftwareGuardPrivate::GetPackageByProgram(const string &program)
 {
     string package;
 
-    map<string, string>::iterator it = cmdPkgSet.find(cmdline);
+    map<string, string>::iterator it = cmdPkgSet.find(program);
     if (it != cmdPkgSet.end()) {
-        cout << "Find in set: " << it->first << " - " << it->second << endl;
         package = string(it->second);
         return package;
     }
 
-    package = QueryPackageByPath(cmdline);
+    package = QueryPackageByPath(program);
     if (!package.empty()) {
-        cmdPkgSet[cmdline] = package;
+        cmdPkgSet[program] = package;
     }
     return package;
 }
 
-string SoftwareGuardPrivate::QueryPackageByPath(const string &filepath)
+string SoftwareGuardPrivate::QueryPackageForDeepinWine(int pid)
 {
-    if (filepath.empty()) {
+    string content;
+    vector<string> envList;
+    char filepath[MAX_BUF_SIZE] = {0};
+
+    sprintf(filepath, "/proc/%d/environ", pid);
+    content = GetFileContent(filepath);
+    if (content.empty()) {
         return "";
     }
 
+    namespace ba = boost::algorithm;
+    ba::split(envList, content,
+              ba::is_any_of(boost::as_array("\0")));
+    string value;
+    string wineEnv = "WINEPREFIX=";
+    vector<string>::iterator it = envList.begin();
+
+    for (; it != envList.end(); it++) {
+        size_t idx = (*it).find(wineEnv);
+        if (idx == string::npos) {
+            continue;
+        }
+        value = (*it).substr(idx + 1);
+        break;
+    }
+    if (value.empty()) {
+        return "";
+    }
+
+    vector<string> list;
+    ba::split(list, value, ba::is_any_of("/"));
+    vector<string>::iterator app = (list.end() - 1);
+    memset(filepath, 0, MAX_BUF_SIZE);
+    sprintf(filepath, "/opt/deepinwine/apps/%s", app->data());
+    return QueryPackageByPath(filepath);
+}
+
+string SoftwareGuardPrivate::QueryPackageByPath(const string &filepath)
+{
     namespace drunner = dmcg::module::runner;
     string package;
     string program;
@@ -223,11 +314,6 @@ string SoftwareGuardPrivate::QueryPackageByPath(const string &filepath)
     drunner::TaskManager manager;
     boost::shared_ptr<drunner::Task> task;
 
-    if (filepath.find("/") == string::npos) {
-        // not absolute path
-        return "";
-    }
-    // TODO(jouyouyun): filter invalid command, such as: 'export'
     program = "dpkg";
     args.push_back("-S");
     args.push_back(filepath);
@@ -248,53 +334,38 @@ string SoftwareGuardPrivate::QueryPackageByPath(const string &filepath)
         } else {
             package = output.substr(0, idx);
         }
-    cout << "--------Result for query: " << output<<", package: "<<package<< endl;
     });
     task->Run();
 
     return package;
 }
 
-string SoftwareGuardPrivate::QueryPackageForDeepinWine(int pid)
+void SoftwareGuardPrivate::FilterCmdlinePrefix(vector<string> &items)
 {
-    string content;
-    vector<string> envList;
-    char filepath[MAX_BUF_SIZE] = {0};
-
-    sprintf(filepath, "/proc/%d/environ", pid);
-    content = GetFileContent(filepath);
-    if (content.empty()) {
-        return "";
+    if (items.size() == 1) {
+        return ;
     }
-    boost::algorithm::split(envList, content,
-            boost::algorithm::is_any_of(boost::as_array("\0")));
 
-    string value;
-    string wineEnv = "WINEPREFIX=";
-    vector<string>::iterator it = envList.begin();
-    for (; it != envList.end(); it++) {
-        size_t idx = (*it).find(wineEnv);
-        if (idx == string::npos) {
-            continue;
+    vector<string>::iterator it = items.begin();
+
+    if (!IsShell(string(it->data()))) {
+        return;
+    }
+    items.erase(it);
+
+    // filter options
+    it = items.begin();
+    for (; it != items.end(); it++) {
+        if (!(*it).empty() && (*it)[0] == '-') {
+            items.erase(it);
+            it--;
+        } else {
+            break;
         }
-        value = (*it).substr(idx+1);
-        break;
     }
-    if (value.empty()) {
-        return "";
-    }
-
-    vector<string> pathList;
-    boost::algorithm::split(pathList, value,
-            boost::algorithm::is_any_of("/"));
-    vector<string>::iterator app = (pathList.end() - 1);
-
-    memset(filepath, 0, 1024);
-    sprintf(filepath, "/opt/deepinwine/apps/%s", app->data());
-    return QueryPackageByPath(filepath);
 }
 
-string SoftwareGuardPrivate::GetFileContent(const string & filename)
+string SoftwareGuardPrivate::GetFileContent(const string &filename)
 {
     fstream fr;
     string content;
@@ -305,46 +376,38 @@ string SoftwareGuardPrivate::GetFileContent(const string & filename)
         istreambuf_iterator<char> end;
         content = string(beg, end);
     } catch (exception &e) {
-        //LOG_ERROR << "open pid file failed: " << e.what();
-        cout << "open pid file failed: " << e.what() << endl;
+        //LOG_ERROR << "read file content failed: " << e.what();
+        cout << "read file content failed: " << e.what() << endl;
         return "";
     }
 
-    cout<<"^^^^^^^^^ File: "<<filename<<", Content: "<<content<<endl;
     return content;
 }
 
-void SoftwareGuardPrivate::FilterCmdlinePrefix(vector<string> & items)
+bool SoftwareGuardPrivate::IsShell(const string &name)
 {
-    if (items.size() == 1) {
-        return;
-    }
+    static vector<string> list;
 
-    vector<string>::iterator it = items.begin();
-    vector<string> invalidPrefix;
+    list.push_back("sh");
+    list.push_back("bash");
+    list.push_back("zsh");
+    list.push_back("/bin/sh");
+    list.push_back("/bin/bash");
+    list.push_back("/bin/zsh");
 
-    invalidPrefix.push_back("sh");
-    invalidPrefix.push_back("/bin/sh");
-    invalidPrefix.push_back("bash");
-    invalidPrefix.push_back("/bin/bash");
-    invalidPrefix.push_back("zsh");
-    invalidPrefix.push_back("/bin/zsh");
+    return find(list.begin(), list.end(), name) != list.end();
+}
 
-    if (find(invalidPrefix.begin(), invalidPrefix.end(), string(it->data())) == invalidPrefix.end()) {
-        return;
-    }
-    items.erase(it);
+bool SoftwareGuardPrivate::IsDeepinWine(const string &name)
+{
+    static vector<string> list;
 
-    // filter options
-    it = items.begin();
-    for(; it != items.end(); it++) {
-        if (!(*it).empty() && (*it)[0] == '-') {
-            items.erase(it);
-            it--;
-        } else {
-            break;
-        }
-    }
+    list.push_back("deepin-wine");
+    list.push_back("deepin-wine32");
+    list.push_back("deepin-wine:i386");
+    list.push_back("deepin-wine32-preloader:i386");
+
+    return find(list.begin(), list.end(), name) != list.end();
 }
 } // namespace software
 } // namespace module

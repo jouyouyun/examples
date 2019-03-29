@@ -8,17 +8,16 @@ using namespace std;
 int
 main(int argc, char *argv[])
 {
-    if (argc != 2) {
-        cout << "Usage: " << argv[0] << " <blacklist file>" << endl;
+    if (argc != 3) {
+        cout << "Usage: " << argv[0] << " <whitelist file> <blacklist file>" << endl;
         return -1;
     }
 
     namespace nsoft = dmcg::module::software;
-    nsoft::SoftwareGuard guard(argv[1]);
-    guard.ReloadBlacklist(argv[1]);
-    guard.Kill.connect([](const string& package){
-            cout<<"Recieved Kill: "<<package<<endl;
-            });
+    nsoft::SoftwareGuard guard(argv[1], argv[2]);
+    guard.Kill.connect([](const string & package) {
+        cout << "Recieved Kill: " << package << endl;
+    });
     guard.Loop();
     return 0;
 }

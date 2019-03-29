@@ -10,6 +10,7 @@ class NetlinkProc
 {
 public:
     virtual void HandleExecEvent(int pid) = 0;
+    virtual void HandleExitEvent(int pid) = 0;
 };
 } // namespace software
 } // namespace module

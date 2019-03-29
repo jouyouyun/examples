@@ -11,7 +11,7 @@
 #include <linux/cn_proc.h>
 
 #include <iostream>
-// #include "modules/log/log.h"
+//#include "modules/log/log.h"
 
 namespace dmcg
 {
@@ -102,7 +102,7 @@ int NLMonitorPrivate::Connect()
 
     nlsock = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
     if (nlsock == -1) {
-        // LOG_ERROR << "open netlink socket failed: " << strerror(errno);
+        //LOG_ERROR << "open netlink socket failed: " << strerror(errno);
         cout << "open netlink socket failed: " << strerror(errno) << endl;
         return -1;
     }
@@ -116,7 +116,7 @@ int NLMonitorPrivate::Connect()
     if (rc == -1) {
         close(nlsock);
         nlsock = -1;
-        // LOG_ERROR << "bind netlink socket failed: " << strerror(errno);
+        //LOG_ERROR << "bind netlink socket failed: " << strerror(errno);
         cout << "bind netlink socket failed: " << strerror(errno) << endl;
         return -1;
     }
@@ -146,7 +146,7 @@ int NLMonitorPrivate::SubscribeEvent(bool enabled)
 
     rc = send(nlsock, &msg, sizeof(msg), 0);
     if (rc == -1) {
-        // LOG_ERROR << "subscribe netlink event failed: " << strerror(errno);
+        //LOG_ERROR << "subscribe netlink event failed: " << strerror(errno);
         cout << "subscribe netlink event failed: " << strerror(errno) << endl;
         return -1;
     }
@@ -178,19 +178,24 @@ int NLMonitorPrivate::HandleEvent()
                 continue;
             }
             need_exit = true;
-            // LOG_WARN << "recieve netlink socket failed: " << strerror(errno);
+            //LOG_WARN << "recieve netlink socket failed: " << strerror(errno);
             cout << "recieve netlink socket failed: " << strerror(errno) << endl;
             break;
         }
 
         switch (msg.event.what) {
         case proc_event::PROC_EVENT_NONE:
-            // LOG_INFO << "Subscribe mcast event success!";
+            //LOG_INFO << "Subscribe mcast event success!";
             cout << "Subscribe mcast event success!" << endl;
             break;
         case proc_event::PROC_EVENT_EXEC: {
             int pid = msg.event.event_data.exec.process_pid;
             handler->HandleExecEvent(pid);
+            break;
+        }
+        case proc_event::PROC_EVENT_EXIT: {
+            int pid = msg.event.event_data.exit.process_pid;
+            handler->HandleExitEvent(pid);
             break;
         }
         default:
