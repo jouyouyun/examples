@@ -22,7 +22,7 @@ using namespace std;
 
 #define MAX_BUF_SIZE 1024
 #define PROGRAM_DPKG_QUERY "dpkg-query"
-#define CMDLINE "dpkg-query -f '${Package},${Version},{Architecture}\n' -W"
+#define CMDLINE "dpkg-query -f '${Package},${Version},${Architecture}\n' -W"
 #define CMDLINE_DELIM ","
 
 void ParseCMDLine(string &line, SoftwareInfo *info);
@@ -124,7 +124,7 @@ vector<string> SoftwareInfoListPrivate::MakeDpkgQueryArgs(const string &name)
 {
     vector<string> args;
     args.push_back("-f");
-    args.push_back("'${Package},${Version},{Architecture}\n'");
+    args.push_back("${Package},${Version},${Architecture}\n");
     args.push_back("-W");
     if (!name.empty()) {
         args.push_back(name);
@@ -136,6 +136,7 @@ void ParseCMDLine(string &line, SoftwareInfo *info)
 {
     namespace al = boost::algorithm;
     al::trim_right_if(line, al::is_any_of("\n"));
+    cout<<"CMD output: "<<line<<"-"<<endl;
     vector<string> list;
     al::split(list, line, al::is_any_of(CMDLINE_DELIM));
     if (list.size() != 3) {

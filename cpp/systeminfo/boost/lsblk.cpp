@@ -51,7 +51,7 @@ Lsblk::~Lsblk()
 
 LsblkPartition *Lsblk::Get(const string &path)
 {
-    if (d->part_list.size() == 0) {
+    if (d->part_list.size() == 0 || path.empty()) {
         return NULL;
     }
     vector<LsblkPartition>::iterator it = d->part_list.begin();
@@ -83,8 +83,13 @@ LsblkPartition *Lsblk::GetByMountPoint(const string &mountpoint)
         return NULL;
     }
 
-    LsblkPartition *ret = new LsblkPartition((LsblkPartition)(*it));
-    return ret;
+    string diskPath = d->part_disk_sets[it->GetPath()];
+    if (diskPath.empty()) {
+        cout<<"Not in map: "<<it->GetPath()<<endl;
+        return NULL;
+    }
+
+    return Get(diskPath);
 }
 
 LsblkPrivate::LsblkPrivate()
@@ -93,12 +98,17 @@ LsblkPrivate::LsblkPrivate()
     GetLsblkStdout(lines);
     if (lines.size() == 0) {
         // failed
+        cout<<"lsblk No output"<<endl;
         return ;
     }
 
     vector<string>::iterator iter = lines.begin();
     string cur_disk;
     for (; iter != lines.end(); iter++) {
+        if (iter->empty()) {
+            continue;
+        }
+
         LsblkPartition part(*iter);
         part_list.push_back(part);
         if (part.GetType() == PARTITION_TYPE_DISK) {
