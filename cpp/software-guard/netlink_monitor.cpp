@@ -107,6 +107,22 @@ int NLMonitorPrivate::Connect()
         return -1;
     }
 
+    // ENOBUF
+    // There are several reasons why you may hit ENOBUFS:
+    // 1. your program is too slow to handle the Netlink messages that you
+    //    receive from the kernel at a given rate. This is easier to trigger if
+    //    the handling that you perform on every message takes too long.
+    // 2. the queue size is too small
+    // Hit by setsockopt
+    // 1. setsockopt(nfct_fd(h), SOL_NETLINK, NETLINK_BROADCAST_SEND_ERROR, &on, sizeof(int));
+    // 2. setsockopt(nfct_fd(h), SOL_NETLINK, NETLINK_NO_ENOBUFS, &on, sizeof(int));
+    // See: https://netfilter.vger.kernel.narkive.com/cwzlgk8d/why-no-buffer-space-available
+    int on = 1;
+    setsockopt(nlsock, SOL_NETLINK, NETLINK_BROADCAST_ERROR, 
+            &on, sizeof(int));
+    setsockopt(nlsock, SOL_NETLINK, NETLINK_NO_ENOBUFS, 
+            &on, sizeof(int));
+
     memset(&nladdr, 0, sizeof(nladdr));
     nladdr.nl_family = AF_NETLINK;
     nladdr.nl_groups = CN_IDX_PROC;
@@ -164,11 +180,12 @@ int NLMonitorPrivate::HandleEvent()
         };
     } msg;
     int rc;
+    size_t len = sizeof(msg);
 
     while (!need_exit) {
-        memset(&msg, 0, sizeof(msg));
+        memset(&msg, 0, len);
         rc = 0;
-        rc = recv(nlsock, &msg, sizeof(msg), 0);
+        rc = recv(nlsock, &msg, len, MSG_WAITALL);
         if (rc == 0) {
             // shutdown
             need_exit = true;
@@ -190,6 +207,7 @@ int NLMonitorPrivate::HandleEvent()
             break;
         case proc_event::PROC_EVENT_EXEC: {
             int pid = msg.event.event_data.exec.process_pid;
+            cout<<"~~~~~~~ [Exec] Start pid: "<<pid<<" ~~~~~~"<<endl;
             handler->HandleExecEvent(pid);
             break;
         }

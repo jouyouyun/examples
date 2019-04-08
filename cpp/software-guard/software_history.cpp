@@ -205,7 +205,6 @@ int64_t SoftHistoryPrivate::GetTimestamp()
     bpt::ptime epoch(boost::gregorian::date(1970,
                                             boost::gregorian::Jan,
                                             1));
-    cout << "Date start: " << epoch.base_time::date() << endl;
     bpt::time_duration dur = bpt::second_clock::universal_time() - epoch;
     return dur.total_seconds();
 }

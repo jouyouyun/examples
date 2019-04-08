@@ -49,6 +49,7 @@ private:
     string GetFileContent(const string &filename);
     bool IsShell(const string &name);
     bool IsDeepinWine(const string &name);
+    bool IgnoreProgram(const string &program);
 
     SoftwareGuard *guard;
     unique_ptr<SoftwareHistory> soft_hist;
@@ -117,6 +118,7 @@ void SoftwareGuard::HandleExecEvent(int pid)
         return;
     }
 
+    cout<<"+++++++++++[PID]: "<<pid<<" -- [Package]: "<<package<<endl;
     if (d->black->IsInList(package)) {
         //LOG_DEBUG << "Kill pid: " << pid;
         cout << "Kill pid: " << pid << endl;
@@ -185,7 +187,7 @@ string SoftwareGuardPrivate::GetPackage(int pid)
     string package;
     string program = GetProgram(pid);
     if (program.empty()) {
-        return package;
+        return "";
     }
 
     // wine app
@@ -317,6 +319,7 @@ string SoftwareGuardPrivate::QueryPackageByPath(const string &filepath)
     program = "dpkg";
     args.push_back("-S");
     args.push_back(filepath);
+    cout<<"-----------File for query: "<<filepath<<endl;
     task = manager.Create(program, args);
     task->Finish.connect([&package](const string & exception,
                                     int exit_code,
@@ -408,6 +411,20 @@ bool SoftwareGuardPrivate::IsDeepinWine(const string &name)
     list.push_back("deepin-wine32-preloader:i386");
 
     return find(list.begin(), list.end(), name) != list.end();
+}
+
+bool SoftwareGuardPrivate::IgnoreProgram(const string &program)
+{
+    static vector<string> list = {"/usr/bin/whoami", "whoami", "export", "gvfs-backends", "dbus-send"};
+    //return find(list.begin(), list.end(), string(program)) == list.end();
+    vector<string>::iterator iter = list.begin();
+    for (; iter != list.end(); iter++) {
+    cout<<"[[[[[[[[Ignore]]]]]]]]: '"<<program.c_str()<<"', SRC: '"<<*iter->data()<<"',"<<endl;
+        if (strcmp(iter->data(), program.c_str()) == 0) {
+            return false;
+        }
+    }
+    return true;
 }
 } // namespace software
 } // namespace module
