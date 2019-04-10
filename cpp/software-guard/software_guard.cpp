@@ -321,7 +321,7 @@ string SoftwareGuardPrivate::QueryPackageByPath(const string &filepath)
     args.push_back(filepath);
     cout<<"-----------File for query: "<<filepath<<endl;
     task = manager.Create(program, args);
-    task->Finish.connect([&package](const string & exception,
+    task->Finish.connect([task, &package](const string & exception,
                                     int exit_code,
                                     const string & output,
     const string & error_output) {

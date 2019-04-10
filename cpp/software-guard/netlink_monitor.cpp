@@ -10,6 +10,10 @@
 #include <linux/connector.h>
 #include <linux/cn_proc.h>
 
+#include <boost/bind.hpp>
+#include <boost/thread.hpp>
+#include <boost/asio/io_service.hpp>
+
 #include <iostream>
 //#include "modules/log/log.h"
 
@@ -28,6 +32,7 @@ class NLMonitorPrivate
 public:
     NLMonitorPrivate(NetlinkProc *proc);
     ~NLMonitorPrivate();
+    void RealHandleEvent(bool exec, int pid);
 
 private:
     int Connect();
@@ -37,6 +42,11 @@ private:
     bool need_exit;
     int nlsock;
     NetlinkProc *handler;
+    boost::asio::io_service ioService;
+    // 声明一个 work 的原因是为了保证ioService的run方法在这个work销毁
+    // 之前不会退出
+    unique_ptr<boost::asio::io_service::work> work;
+    boost::thread_group thrdGrp;
 };
 
 NetlinkMonitor::NetlinkMonitor(NetlinkProc *proc)
@@ -85,6 +95,13 @@ NLMonitorPrivate::NLMonitorPrivate(NetlinkProc *proc): handler(proc)
 {
     need_exit = false;
     nlsock = -1;
+
+    work = unique_ptr<boost::asio::io_service::work>(new  boost::asio::io_service::work(this->ioService));
+    int n = boost::thread::hardware_concurrency();
+    for (int i = 0; i < n * 2; i++) {
+        this->thrdGrp.create_thread(boost::bind(&boost::asio::io_service::run,
+                                                &this->ioService));
+    }
 }
 
 NLMonitorPrivate::~NLMonitorPrivate()
@@ -93,6 +110,9 @@ NLMonitorPrivate::~NLMonitorPrivate()
         close(nlsock);
         nlsock = -1;
     }
+
+    ioService.stop();
+    thrdGrp.join_all();
 }
 
 int NLMonitorPrivate::Connect()
@@ -118,10 +138,10 @@ int NLMonitorPrivate::Connect()
     // 2. setsockopt(nfct_fd(h), SOL_NETLINK, NETLINK_NO_ENOBUFS, &on, sizeof(int));
     // See: https://netfilter.vger.kernel.narkive.com/cwzlgk8d/why-no-buffer-space-available
     int on = 1;
-    setsockopt(nlsock, SOL_NETLINK, NETLINK_BROADCAST_ERROR, 
-            &on, sizeof(int));
-    setsockopt(nlsock, SOL_NETLINK, NETLINK_NO_ENOBUFS, 
-            &on, sizeof(int));
+    setsockopt(nlsock, SOL_NETLINK, NETLINK_BROADCAST_ERROR,
+               &on, sizeof(int));
+    setsockopt(nlsock, SOL_NETLINK, NETLINK_NO_ENOBUFS,
+               &on, sizeof(int));
 
     memset(&nladdr, 0, sizeof(nladdr));
     nladdr.nl_family = AF_NETLINK;
@@ -207,13 +227,18 @@ int NLMonitorPrivate::HandleEvent()
             break;
         case proc_event::PROC_EVENT_EXEC: {
             int pid = msg.event.event_data.exec.process_pid;
-            cout<<"~~~~~~~ [Exec] Start pid: "<<pid<<" ~~~~~~"<<endl;
-            handler->HandleExecEvent(pid);
+            // cout<<"~~~~~~~ [Exec] Start pid: "<<pid<<" ~~~~~~"<<endl;
+            //handler->HandleExecEvent(pid);
+            this->ioService.post(boost::bind(&NLMonitorPrivate::RealHandleEvent,
+                                             this, true, pid));
             break;
         }
         case proc_event::PROC_EVENT_EXIT: {
             int pid = msg.event.event_data.exit.process_pid;
-            handler->HandleExitEvent(pid);
+            // cout<<"======= [Exit] Start pid: "<<pid<<" ======="<<endl;
+            //handler->HandleExitEvent(pid);
+            this->ioService.post(boost::bind(&NLMonitorPrivate::RealHandleEvent,
+                                             this, false, pid));
             break;
         }
         default:
@@ -222,6 +247,15 @@ int NLMonitorPrivate::HandleEvent()
     }
 
     return rc;
+}
+
+void NLMonitorPrivate::RealHandleEvent(bool exec, int pid)
+{
+    if (exec) {
+        this->handler->HandleExecEvent(pid);
+        return;
+    }
+    this->handler->HandleExitEvent(pid);
 }
 } // namespace software
 } // namespace module
