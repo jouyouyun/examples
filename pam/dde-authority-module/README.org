@@ -1,0 +1,83 @@
+#+OPTIONS: toc:nil ^:{} timestamp:nil
+
+* DDE Authority PAM Module
+
+专为 =dde-authority= 实现的 =pam module=, 用于支持多路登录(同时使用密码和指纹).
+
+** ~dde-authority~ 接口信息
+
+=dde-authority= 提供了 =DBus= 服务, 用于 =IPC= 通信.
+这里用到的接口信息如下:
+
++ *DBus Service:*
+
+  =com.deepin.daemon.Authority=
+
++ *DBus Path:*
+
+  =/com/deepin/daemon/Authority=
+
++ *DBus Interface:*
+
+  =com.deepin.daemon.Authority=
+
++ *Methods:*
+
+  - *HasCookie(s) b*
+
+    *参数:* 只有一个字符串(=s=) 参数, 表示用户名
+
+    *返回值:* =boolean= 类型, 返回 =false= 则失败
+
+  - *CheckCookie(s,s) b*
+
+    *参数:* 有两个字符串(=s=)参数, 分别表示用户名和 =cookie=
+
+    *返回值:* =boolean= 类型, 返回 =false= 则失败
+
+
+*** 流程
+
+1. 调用 =HasCookie= 函数, 如果值为 =false= 则返回失败
+2. 调用 =CheckCookie= 函数, 如果值为 =false= 则返回失败
+
+** =PAM Module= 编写
+
+=#include <security/pam_modules.h>= 中定义了 =pam module= 应该实现的接口, 如下:
+
+#+BEGIN_SRC c
+struct pam_module {
+    const char *name;       /* Name of the module */
+
+    /* These are function pointers to the module's key functions.  */
+
+    int (*pam_sm_authenticate)(pam_handle_t *pamh, int flags,
+                   int argc, const char **argv);
+    int (*pam_sm_setcred)(pam_handle_t *pamh, int flags,
+              int argc, const char **argv);
+    int (*pam_sm_acct_mgmt)(pam_handle_t *pamh, int flags,
+                int argc, const char **argv);
+    int (*pam_sm_open_session)(pam_handle_t *pamh, int flags,
+                   int argc, const char **argv);
+    int (*pam_sm_close_session)(pam_handle_t *pamh, int flags,
+                int argc, const char **argv);
+    int (*pam_sm_chauthtok)(pam_handle_t *pamh, int flags,
+                int argc, const char **argv);
+};
+#+END_SRC
+
+简单说明如下, 详细描述请使用 =man(3)=:
+
+| 接口                 | 描述                           |
+|----------------------+--------------------------------|
+| pam_sm_authenticate  | 认证管理接口, 用于认证用户     |
+| pam_sm_setcred       | 证书设置接口                   |
+| pam_sm_acct_mgmt     | 帐号管理接口, 用于修改账户信息 |
+| pam_sm_open_session  | 打开会话                       |
+| pam_sm_close_session | 关闭会话                       |
+| pam_sm_chauthtok     | 口令管理接口, 用于设置口令     |
+
+这些接口可以不全部实现, 只实现需要用到的认证方式. 如本模块就只会实现 =pam_sm_authenticate= 接口.
+另外 =pam= 也提供了诸如 =pam_get_item/pam_set_item= 这样的接口来获取用户设置的认证参数.
+
+模块编写完成后, 编译成动态库, 然后到 =/etc/pam.d/= 下配置, 这样就可以使用了.
