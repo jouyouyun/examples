@@ -1,0 +1,17 @@
+* sd-bus 使用
+
+=sd-bus= 是 =systemd= 根据 =d-bus= 协议实现的, 同时也支持 =kdbus=, 同时给出了 =d-bus= 命令行工具 =busctl= .
+=API= 接口请见 [[https://github.com/systemd/systemd/blob/master/src/systemd/sd-bus.h][sd-bus.h]], 这里给出简单的示例代码.
+
+
+** Server
+
+代码见文件: [[./server.c][server.c]]
+
+编译: =gcc -Wall -g server.c `pkg-config --cflags --libs libsystemd`=
+
+** Client
+
+代码见文件: [[./client.c][client.c]]
+
+编译: =gcc -Wall -g client.c `pkg-config --cflags --libs libsystemd`=
