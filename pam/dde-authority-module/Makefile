@@ -1,6 +1,6 @@
 TARGET=pam_dde_authority.so
 CC=gcc
-CFLAGS=-Wall -g `pkg-config --cflags libsystemd`
+CFLAGS=-Wall -g `pkg-config --cflags --libs libsystemd`
 SRCS=pam.c
 
 build: ${TARGET}

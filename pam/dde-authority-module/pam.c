@@ -18,6 +18,8 @@
 #include <errno.h>
 #include <string.h>
 #include <systemd/sd-bus.h>
+#include <syslog.h>
+#include <security/pam_ext.h>
 
 #define PAM_SM_AUTH
 #include <security/pam_modules.h>
@@ -98,6 +100,8 @@ pam_sm_chauthtok(pam_handle_t *pamh, int flags,
 static int
 send_msg(pam_handle_t *pamh, const char *msg, int style)
 {
+    pam_syslog(pamh, LOG_INFO, "%s", msg);
+
     const struct pam_message pmsg = {
         .msg = msg,
         .msg_style = style,
@@ -174,7 +178,7 @@ check_cookie(pam_handle_t *pamh, sd_bus *bus, const char *username)
     int ret = 0;
     int result = 0;
 
-    ret = pam_get_item(pamh, PAM_AUTHTOK, (const void**)&cookie);
+    ret = pam_get_authtok(pamh, PAM_AUTHTOK, &cookie, NULL);
     if (ret != PAM_SUCCESS) {
         memset(msg, 0, MAX_BUF_SIZE);
         snprintf(msg, MAX_BUF_SIZE, "Failed to get auth token: %s",
