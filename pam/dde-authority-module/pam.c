@@ -190,7 +190,7 @@ check_cookie(pam_handle_t *pamh, sd_bus *bus, const char *username)
 
     ret = sd_bus_call_method(bus, DBUS_DEST, DBUS_PATH, DBUS_IFC,
                              DBUS_M_CHECK_COOKIE, &err, &reply,
-                             "s", username, cookie);
+                             "ss", username, cookie);
     if (ret < 0) {
         memset(msg, 0, MAX_BUF_SIZE);
         snprintf(msg, MAX_BUF_SIZE, "Failed to call 'CheckCookie': %s, %s",
