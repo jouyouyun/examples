@@ -5,14 +5,18 @@ PWD=$(shell pwd)
 CFLAGS=-Wall -g
 LDFLAGS=-lboost_system -lboost_filesystem -lboost_thread -lpthread
 
-SRCS := main.cpp software_info.cpp software.cpp executor.cpp task.cpp task_manager.cpp
+vpath %.cpp ${PWD}
+OBJS := main.o software_info.o software.o executor.o task.o task_manager.o
 
 build: ${PROG_NAME}
 
-${PROG_NAME}:${SRCS}
+${PROG_NAME}:${OBJS}
 	${CPP} ${CFLAGS} $^ ${LDFLAGS} -o $@
 
+%.o: %.cpp
+	${CPP} ${CFLAGS} -c $<
+
 clean:
-	rm -f ${PROG_NAME}
+	rm -f *.o ${PROG_NAME}
 
 rebuild: clean ${PROG_NAME}

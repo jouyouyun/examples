@@ -136,7 +136,7 @@ void ParseCMDLine(string &line, SoftwareInfo *info)
 {
     namespace al = boost::algorithm;
     al::trim_right_if(line, al::is_any_of("\n"));
-    cout<<"CMD output: "<<line<<"-"<<endl;
+    //cout<<"CMD output: "<<line<<"-"<<endl;
     vector<string> list;
     al::split(list, line, al::is_any_of(CMDLINE_DELIM));
     if (list.size() != 3) {

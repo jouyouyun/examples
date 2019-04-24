@@ -22,8 +22,7 @@ public:
     SoftwareInfo *Get(const std::string &name);
 
     SoftwareInfoList *GetListIter();
-    std::vector<SoftwareInfo *> GetList();
-    void FreeList(std::vector<SoftwareInfo *> &list);
+    std::vector<std::unique_ptr<SoftwareInfo>> GetList();
     Executor *InstallPackage(const std::string &name);
     Executor *RemovePackage(const std::string &name);
 };

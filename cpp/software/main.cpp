@@ -53,8 +53,8 @@ void TestSoftwareInfo()
     int count = 1;
 
     cout << "Query list for top10" << endl;
-    vector<nsoft::SoftwareInfo *> infos = soft.GetList();
-    vector<nsoft::SoftwareInfo *>::iterator it = infos.begin();
+    vector<unique_ptr<nsoft::SoftwareInfo>> infos = soft.GetList();
+    vector<unique_ptr<nsoft::SoftwareInfo>>::iterator it = infos.begin();
     for (; it != infos.end(); it++) {
         if (count > 10) {
             break;
@@ -62,7 +62,6 @@ void TestSoftwareInfo()
         count++;
         cout << "\tPackage: " << (*it)->name << ", Version: " << (*it)->version << "Architecture" << (*it)->architecture << endl;
     }
-    soft.FreeList(infos);
 
     cout << "Query for 'util-linux'" << endl;
     nsoft::SoftwareInfo *info = soft.Get("util-linux");

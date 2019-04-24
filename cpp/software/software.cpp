@@ -38,30 +38,18 @@ SoftwareInfoList *Software::GetListIter()
     return list;
 }
 
-vector<SoftwareInfo *> Software::GetList()
+vector<unique_ptr<SoftwareInfo>> Software::GetList()
 {
-    vector<SoftwareInfo *> infos;
+    vector<unique_ptr<SoftwareInfo>> infos;
     SoftwareInfoList list;
     SoftwareInfo *info = list.Next();
 
     while (info) {
-        infos.push_back(info);
+        unique_ptr<SoftwareInfo> tmp = unique_ptr<SoftwareInfo>(info);
+        infos.push_back(move(tmp));
         info = list.Next();
     }
     return infos;
-}
-
-void Software::FreeList(vector<SoftwareInfo *> &list)
-{
-    if (list.size() == 0) {
-        return ;
-    }
-
-    vector<SoftwareInfo *>::iterator it = list.begin();
-    for (; it != list.end(); it++) {
-        delete *it;
-    }
-    list.clear();
 }
 
 Executor *Software::InstallPackage(const string &name)
