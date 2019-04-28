@@ -1,0 +1,20 @@
+#+OPTIONS: ^:{} timestamp:nil
+#+TITLE: Github Repository Event Statistic
+
+使用 =github webhook= 来统计 =issue, pull-requet= 等的创建与关闭次数.
+
+这里的只是一个 =demo=.
+
+** TODO
+
++ [ ] 分类处理 =webhook events=
++ [ ] 时间数据写入到 =influxdb=, 包含 =operator, organization, repository= 等信息
++ [ ] 统计个人每天的 =issue, pr= 提交,评审,回复数量
++ [ ] 统计组织每月外部 =pr=, =star=, =issue= 数量
++ [ ] 使用 =grafana= 展示数据
+
+统计功能先调研 =influxdb= 的持续查询, 若无法实现则自行实现.
+
+** Build
+
+将 =github-statistic= 移入 =GOPATH/src= 中, 然后执行 =make=
