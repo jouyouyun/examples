@@ -1,6 +1,7 @@
 a.out
 *.swp
 *.swap
+.vscode
 
 __pycache__
 test.xlsx

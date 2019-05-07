@@ -1,0 +1,5 @@
+*.o
+/catch_test
+/google_test
+/testdata/hostname_tmp
+/build
