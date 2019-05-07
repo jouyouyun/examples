@@ -94,10 +94,14 @@ void Task::operator()()
     }
 }
 
-void Task::Run()
+void Task::Run(bool joined)
 {
     d->thread.reset(new boost::thread(boost::ref(*this)));
-    d->thread->join();
+    if (joined) {
+        d->thread->join();
+    } else {
+        d->thread->detach();
+    }
 }
 
 } // namespace runner

@@ -1,6 +1,7 @@
 #include "task_manager.h"
 #include "task.h"
 
+#include <unistd.h>
 #include <iostream>
 #include <vector>
 
@@ -17,9 +18,9 @@ int main()
 	TaskManager manager;
 	boost::shared_ptr<Task> task;
 
-	args = MakeArgs("/home/wen");
+	args = MakeArgs("/home");
 	task = manager.Create("ls", args);
-	task->Finish.connect([](const string &exception, 
+	task->Finish.connect([task](const string &exception,
 				int exit_code,
 				const string &output,
 				const string &error_output){
@@ -28,7 +29,8 @@ int main()
 				cout<<"Stdout: "<<output<<endl;
 				cout<<"Stderr: "<<error_output<<endl;
 			});
-	task->Run();
+	task->Run(false);
+        sleep(3);
 	return 0;
 }
 

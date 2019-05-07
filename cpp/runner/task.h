@@ -23,7 +23,7 @@ public:
 
     boost::signals2::signal<void(const std::string &exception, int, const std::string &, const std::string &)> Finish;
 
-    void Run();
+    void Run(bool joined);
 
 private:
     boost::scoped_ptr<TaskPrivate> d;
