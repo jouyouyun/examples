@@ -1,0 +1,9 @@
+[Unit]
+Description=Huawei Suspend Workaround
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c "echo XHC >> /proc/acpi/wakeup"
+
+[Install]
+WantedBy=multi-user.target

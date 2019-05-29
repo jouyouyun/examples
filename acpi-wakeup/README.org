@@ -1,0 +1,39 @@
+#+OPTIONS: toc:nil timestamp:nil
+#+TITLE: 华为笔记本休眠失败修复方法
+
+** 现象
+
+华为笔记本在休眠后会被自动唤醒，查看日志并没有发现错误信息，于是猜测是某些设备产生的 =wakeup= 事件唤醒的。
+便查看 =/proc/acpi/wakeup= 文件，发现只有 =XHC= 设备是 =enabled= 。
+遂将其关闭(=echo XHC >> /proc/acpi/wakeup=), 然后测试休眠，则工作正常。
+
+#+BEGIN_QUOTE
+通过 =XHC= 的 =sysfs node= (=lspci -s <pci node>= 发现其是一个 =USB= 控制器，
+在 =/sys/bus/pci/devices/<pci node>= 中发现其下有两个 =USB= 设备，通过设备下的 =uevent= 文件(里面的 =PRODUCT= 字段)和 =lsusb= 命令可查到此设备的名称。
+#+END_QUOTE
+
+** 处理方法
+
+为了使上面的关闭方法持久化，这里决定使用 =systemd service= 来实现，并在加载 =multi-user.target= 时执行。
+
+文件(=huawei_suspend_workaround.service=)如下：
+
+#+BEGIN_SRC shell
+[Unit]
+Description=Huawei Suspend Workaround
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c "echo XHC >> /proc/acpi/wakeup"
+
+[Install]
+WantedBy=multi-user.target
+#+END_SRC
+
+执行以下命令安装并启用：
+
+#+BEGIN_SRC shell
+sudo cp huawei_suspend_workaround.service /lib/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable huawei_suspend_workaround.service
+#+END_SRC
