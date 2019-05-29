@@ -1,0 +1,79 @@
+#+OPTIONS: toc:nil ^:{} num:nil timestamp:nil
+#+AUTHOR: jouyouyun (jouyouwen717@gmail.com)
+#+TITLE: 蓝牙相关问题
+
+** 问题1
+
+#+BEGIN_QUOTE
+需确认深度的 =os= 镜像用的蓝牙协议栈是否是 =blueZ= ? 如果是，该 =os= 移植的 =blueZ= 是不是只支持到蓝牙协议 =4.2= ?
+#+END_QUOTE
+
+=deepin= 是使用的 =blueZ= 协议栈，安装的版本是 =5.43= ，使用 =dpkg= 可查，如：
+
+#+BEGIN_SRC shell
+$ dpkg -l|ag bluez
+ii  bluez        5.43-2+deb9u1       amd64        Bluetooth tools and daemons
+#+END_SRC
+
+=blueZ 5.43= 支持蓝牙协议 =5.0= 之前的所有版本，而 =5.0= 协议的支持是在 =5.47= 时加入的，见其发行注记：
+
+#+BEGIN_QUOTE
+Release of BlueZ 5.47
+14th September 2017, 01:13 pm by Johan Hedberg
+
+This release contains various fixes to GATT, A2DP and BR/EDR vs LE bearer handling.
+There’s also a notable SDP fix for CVE-2017-1000250 (part of the recently announced BlueBorne vulnerabilities).
+
+Feature-wise, there’s now support for adding the appearance and local name to advertising data through the Advertising D-Bus interface.
+The btmon tool is now also able to better decode most Bluetooth 5.0 HCI commands and events.
+
+The Bluetooth Mesh Profile specification was released recently, and this BlueZ release comes with initial support for it in the form of a new meshctl tool.
+Using this tool it’s possible to provision mesh devices through the GATT Provisioning Bearer (PB-GATT),
+as well as communicate with them (e.g. configure them) using the GATT Proxy protocol.
+#+END_QUOTE
+
+-----
+
+** 问题2
+
+#+BEGIN_QUOTE
+想知道蓝牙的 =HCI= 日志如何获取?
+#+END_QUOTE
+
+执行命令 =sudo btmon= 即可获取 =hci= 的日志。
+
+-----
+
+** 问题3
+
+#+BEGIN_QUOTE
+在 =pc= 与鼠标或者耳机等外设建立连接后，连接的 =linkkey= 如何在 =pc= 上查询到?
+#+END_QUOTE
+
+查询 =linkkey= 需要知道 =pc= 上蓝牙适配器的 =macaddress= 和鼠标或耳机设备的 =macaddress= 。
+
+在执行 =bluetoothctrl= 进入交互式 =shell= 后可获取适配器和外设的 =macaddress= ，输入 =help= 查看使用方法。
+
+得到 =macaddress= 后查看文件 =/var/lib/bluetooth/<adapter macaddress>/<device macaddress>/info= 可获取到 =linkkey= ，如：
+
+#+BEGIN_SRC shell
+$ sudo cat '/var/lib/bluetooth/00:1B:10:00:2A:EC/E8:80:2E:E5:5A:7A/info'
+[General]
+Name=“1”的触控板 #1
+Class=0x002594
+SupportedTechnologies=BR/EDR;
+Trusted=true
+Blocked=false
+Services=00001124-0000-1000-8000-00805f9b34fb;00001200-0000-1000-8000-00805f9b34fb;
+
+[LinkKey]
+Key=89637F627E825DDDB8E7E3A86FDEB74D
+Type=0
+PINLength=0
+
+[DeviceID]
+Source=2
+Vendor=1452
+Product=782
+Version=352
+#+END_SRC
