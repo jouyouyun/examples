@@ -1,0 +1,55 @@
+diff --git a/security/Kconfig b/security/Kconfig
+index d9aa521..baea6f0 100644
+--- a/security/Kconfig
++++ b/security/Kconfig
+@@ -239,9 +239,12 @@ source security/yama/Kconfig
+ 
+ source security/integrity/Kconfig
+ 
++source security/monitor/Kconfig
++
+ choice
+ 	prompt "Default security module"
+ 	default DEFAULT_SECURITY_SELINUX if SECURITY_SELINUX
++	default DEFAULT_SECURITY_MONITOR if SECURITY_MONITOR
+ 	default DEFAULT_SECURITY_SMACK if SECURITY_SMACK
+ 	default DEFAULT_SECURITY_TOMOYO if SECURITY_TOMOYO
+ 	default DEFAULT_SECURITY_APPARMOR if SECURITY_APPARMOR
+@@ -254,6 +257,9 @@ choice
+ 	config DEFAULT_SECURITY_SELINUX
+ 		bool "SELinux" if SECURITY_SELINUX=y
+ 
++	config DEFAULT_SECURITY_MONITOR
++		bool "Monitor" if SECURITY_MONITOR=y
++
+ 	config DEFAULT_SECURITY_SMACK
+ 		bool "Simplified Mandatory Access Control" if SECURITY_SMACK=y
+ 
+@@ -271,6 +277,7 @@ endchoice
+ config DEFAULT_SECURITY
+ 	string
+ 	default "selinux" if DEFAULT_SECURITY_SELINUX
++	default "monitor" if DEFAULT_SECURITY_MONITOR
+ 	default "smack" if DEFAULT_SECURITY_SMACK
+ 	default "tomoyo" if DEFAULT_SECURITY_TOMOYO
+ 	default "apparmor" if DEFAULT_SECURITY_APPARMOR
+diff --git a/security/Makefile b/security/Makefile
+index 4d2d378..4b3d49a 100644
+--- a/security/Makefile
++++ b/security/Makefile
+@@ -5,6 +5,7 @@
+ 
+ obj-$(CONFIG_KEYS)			+= keys/
+ subdir-$(CONFIG_SECURITY_SELINUX)	+= selinux
++subdir-$(CONFIG_SECURITY_MONITOR)	+= monitor
+ subdir-$(CONFIG_SECURITY_SMACK)		+= smack
+ subdir-$(CONFIG_SECURITY_TOMOYO)        += tomoyo
+ subdir-$(CONFIG_SECURITY_APPARMOR)	+= apparmor
+@@ -19,6 +20,7 @@ obj-$(CONFIG_MMU)			+= min_addr.o
+ obj-$(CONFIG_SECURITY)			+= security.o
+ obj-$(CONFIG_SECURITYFS)		+= inode.o
+ obj-$(CONFIG_SECURITY_SELINUX)		+= selinux/
++obj-$(CONFIG_SECURITY_MONITOR)		+= monitor/
+ obj-$(CONFIG_SECURITY_SMACK)		+= smack/
+ obj-$(CONFIG_AUDIT)			+= lsm_audit.o
+ obj-$(CONFIG_SECURITY_TOMOYO)		+= tomoyo/

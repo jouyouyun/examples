@@ -1,0 +1,11 @@
+#+OPTIONS: toc:nil num:nil date:nil timestamp:nil ^:{} <:{}
+#+TITLE: 一个 LSM 例子 monitor
+
+=LSM= 是 =Linux Security Module= 的简写，可对 =linux/lsm_hooks.h= 中 =union security_list_options= 定义的回调函数进行安全验证，即可控制和更改这些函数，
+是一种 =hook= 内核调用的方法。
+
+=LSM= 与其他的内核调用 =hook= 的方法相比： =API= 成熟和多架构支持，但不支持动态加载，需要编译进内核。
+
+** 创建一个 LSM 模块
+
+创建 =LSM= 模块
