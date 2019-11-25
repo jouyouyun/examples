@@ -3,6 +3,8 @@
  *
  * Compile: gcc -Wall -g -fPIC -shared -o pam_template.so  template.c
  *
+ * common-passwd: password       requisite       pam_template.so
+ *
  **/
 #include <stdio.h>
 #include <errno.h>
@@ -15,6 +17,10 @@
 #include <security/pam_modules.h>
 
 #define MAX_BUF_SIZE 1024
+
+#define WEAK_PASSWD_FILE "/etc/rainbowlib"
+
+static int is_weak_passwd(const char *filename, const char *passwd);
 
 /**
  * 发送信息给调用者
@@ -32,7 +38,7 @@ static int send_message(pam_handle_t *pamh, const char *msg, int style);
 PAM_EXTERN int
 pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 {
-    return send_message(pamh, "Success", PAM_TEXT_INFO);
+	return 0;
 }
 
 /**
@@ -41,7 +47,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 PAM_EXTERN int
 pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv)
 {
-    return 0;
+	return 0;
 }
 
 /**
@@ -50,7 +56,26 @@ pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv)
 PAM_EXTERN int
 pam_sm_chauthtok(pam_handle_t *pamh, int flags, int argc, const char **argv)
 {
-    return 0;
+	int exists = 0;
+	const char *token = NULL;
+	int ret = 0;
+	char buf[MAX_BUF_SIZE] = {0};
+
+	ret = pam_get_authtok(pamh, PAM_AUTHTOK, &token, NULL);
+	if (ret != PAM_SUCCESS) {
+		memset(buf, 0, MAX_BUF_SIZE);
+		snprintf(buf, MAX_BUF_SIZE, "failed to get token");
+		send_message(pamh, buf, PAM_ERROR_MSG);
+		return PAM_AUTHTOK_ERR;
+	}
+
+	exists = is_weak_passwd(WEAK_PASSWD_FILE, token);
+	if (exists) {
+		send_message(pamh, "密码太简单", PAM_TEXT_INFO);
+		return PAM_AUTHTOK_ERR;
+	}
+
+	return PAM_IGNORE;
 }
 
 /**
@@ -59,31 +84,63 @@ pam_sm_chauthtok(pam_handle_t *pamh, int flags, int argc, const char **argv)
 PAM_EXTERN int
 pam_sm_acct_mgmt(pam_handle_t *pamh, int flags, int argc, const char **argv)
 {
-    return 0;
+	return 0;
 }
 
 static int
 send_message(pam_handle_t *pamh, const char *msg, int style)
 {
-    const struct pam_message pmsg = {
-        .msg = msg,
-        .msg_style = style,
-    };
-    const struct pam_message *pmsg_ptr = &pmsg;
-    const struct pam_conv *pconv = NULL;
-    struct pam_response *presp = NULL;
-    int ret = 0;
+	const struct pam_message pmsg = {
+		.msg = msg,
+		.msg_style = style,
+	};
+	const struct pam_message *pmsg_ptr = &pmsg;
+	const struct pam_conv *pconv = NULL;
+	struct pam_response *presp = NULL;
+	int ret = 0;
 
-    ret = pam_get_item(pamh, PAM_CONV, (const void**)&pconv);
-    if (ret != PAM_SUCCESS)
-        return -1;
+	ret = pam_get_item(pamh, PAM_CONV, (const void**)&pconv);
+	if (ret != PAM_SUCCESS)
+		return -1;
 
-    if (!pconv || !pconv->conv)
-        return -1;
+	if (!pconv || !pconv->conv)
+		return -1;
 
-    ret = pconv->conv(1, &pmsg_ptr, &presp, pconv->appdata_ptr);
-    if (ret != PAM_SUCCESS)
-        return -1;
+	ret = pconv->conv(1, &pmsg_ptr, &presp, pconv->appdata_ptr);
+	if (ret != PAM_SUCCESS)
+		return -1;
 
-    return 0;
+	return 0;
+}
+
+static int
+is_weak_passwd(const char *filename, const char *passwd)
+{
+	char buf[MAX_BUF_SIZE] = {0};
+	FILE *fr = NULL;
+	char *ret = NULL;
+	int length = 0;
+	int exists = 0;
+
+	fr = fopen(filename, "r");
+	if (!fr)
+		return 0;
+
+	while(!feof(fr)) {
+		memset(buf, 0, MAX_BUF_SIZE);
+		ret = fgets(buf, MAX_BUF_SIZE, fr);
+		if (!ret)
+			continue;
+
+		length = strlen(buf);
+		if (buf[length-1] == '\n')
+			buf[length-1] = '\0';
+		if (strcasecmp(buf, passwd) == 0) {
+			exists = 1;
+			break;
+		}
+	}
+
+	fclose(fr);
+	return exists;
 }
