@@ -1,0 +1,9 @@
+* Deepin Greeter Display Workaround by UDEV
+
+** Installation
+
+#+BEGIN_SRC shell
+sudo cp 90-fix-greeter-display.rules /etc/udev/rules.d/
+sudo cp udev-fix-greeter-display.sh /usr/bin/
+sudo udevadm control --reload
+#+END_SRC
