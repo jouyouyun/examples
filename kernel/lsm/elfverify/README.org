@@ -1,0 +1,27 @@
+#+OPTIONS: toc:nil num:nil date:nil timestamp:nil ^:{} <:{}
+#+TITLE: ELF 内核验证安全模块
+
+** 关键点
+
++ 编写一个安全模块，添加了 =bprm_check_security, sb_mount, sb_umount= 的 =hook= 函数
+
+  - =bprm_check_security hook= 用来检查执行的 =elf= 程序
+  - =sb_mount hook= 用来检查 =mount= 操作
+  - =sb_umount hook= 用来检查 =umount= 操作
+
++ 使用等待队列实现进程的休眠与通知
++ 编写一个字符设备文件 =/dev/elf_verifier= 提供用户态程序（ =ELF= 校验守护进程）的读写接口
++ 从 =/dev/elf_verifier= 可以读出待校验文件的完整文件名列表（每个文件名都以空字符结尾）
++ 可以向 =/dev/elf_verifier= 写入校验结果列表，校验结果列表中的每条数据以一个字节的校验结果（ =0= 表示校验成功， =1= 表示校验失败）开始，后面紧跟对应的完整文件名
+
+** 测试方法
+
++ 创建一个分区，分区名不要是 =/= 、 =/boot= 或者 =/usr= （这都是 =UOS= 定义的系统分区），假设分区名叫 =mypart=
++ 编一个 =ELF= 可执行程序与共享对象（ =shared object= ，或称动态链接库）将其复制到 =/mypart= 上，可通过 =RPATH/RUNPATH= 方法保证连接本地的 =so= 文件，假设文件名分别是 =/mypart/progpath/myls= 和 =/mypart/sopath/libmy.so= ，而且 =myls= 依赖于 =libmy.so=  ( =test= 目录下有测试程序）
++ 运行 =/mypart/progpath/myls= ，可以看到程序被堵住了，通过 =ps= 可以看到程序进入了休眠状态，而且可以从 =dmesg= 看到内核模块正在等待校验此进程
++ 运行 =cat /dev/elf_verifier= 命令可以看到不停地打印 =/mypart/progpath/myls= ，这是内核模块在等待用户态程序对此文件进行校验
++ 运行 =echo -e -n "\x00/mypart/progpath/myls\x00" > /dev/elf_verifier= 可以通过对 =/mypart/progpath/myls= 的校验，但是可以看到程序仍然处于休眠态，因为需要校验 =libmy.so=
++ 运行 =cat /dev/elf_verifier= 或者 =dmesg= 可以确认内核模块正在等待校验 =/mypart/sopath/libmy.so=
++ 运行 =echo -e -n "\x00/mypart/sopath/libmy.so\x00" > /dev/elf_verifier= ，马上就可以看到 =myls= 程序正常运行了
++ 如果在上面的步骤中，在第一步运行了 =echo -e -n "\x01/mypart/progpath/myls\x00" > /dev/elf_verifier= 或者在第二步运行了 =echo -e -n "\x01/mypart/sopath/libmy.so\x00" > /dev/elf_verifier= 则 =myls= 程序的 =mmap= 就会失败，产生一个段错误退出
++ 在 =myls= 处于等待校验的休眠期间的时候向其发送信号，也会导致程序退出

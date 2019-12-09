@@ -1,0 +1,10 @@
+config SECURITY_ELFVERIFY
+       bool "elfverify support"
+       depends on SECURITY
+       depends on NET
+       select SECURITYFS
+       select SECURITY_PATH
+       select SECURITY_NETWORK
+       default y
+       help
+        This selects an elf verify for process invaking and volume mount/umount.

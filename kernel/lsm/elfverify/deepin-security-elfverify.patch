@@ -1,0 +1,984 @@
+From: jouyouyun <jouyouwen717@gmail.com>
+Date: Mon Nov 25 11:07:40 2019 +0800
+Subject: security: add elfverify for deepin elf protected
+
+---
+ security/Kconfig               |   7 +++++
+ security/Makefile              |   2 ++
+ security/elfverify/Kconfig     |  10 ++++++
+ security/elfverify/Makefile    |   1 +
+ security/elfverify/chdev.c     | 313 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ security/elfverify/chdev.h     |  11 +++++++
+ security/elfverify/elfverify.c | 249 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ security/elfverify/partition.c | 190 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ security/elfverify/partition.h |  12 ++++++++
+ security/elfverify/utils.c     |  68 +++++++++++++++++++++++++++++++++++++++++
+ security/elfverify/utils.h     |   3 ++
+ 11 files changed, 866 insertions(+)
+
+diff --git a/security/Kconfig b/security/Kconfig
+index d9aa521b5..011748481 100644
+--- a/security/Kconfig
++++ b/security/Kconfig
+@@ -239,9 +239,12 @@ source security/yama/Kconfig
+ 
+ source security/integrity/Kconfig
+ 
++source security/elfverify/Kconfig
++
+ choice
+ 	prompt "Default security module"
+ 	default DEFAULT_SECURITY_SELINUX if SECURITY_SELINUX
++	default DEFAULT_SECURITY_ELFVERIFY if SECURITY_ELFVERIFY
+ 	default DEFAULT_SECURITY_SMACK if SECURITY_SMACK
+ 	default DEFAULT_SECURITY_TOMOYO if SECURITY_TOMOYO
+ 	default DEFAULT_SECURITY_APPARMOR if SECURITY_APPARMOR
+@@ -254,6 +257,9 @@ choice
+ 	config DEFAULT_SECURITY_SELINUX
+ 		bool "SELinux" if SECURITY_SELINUX=y
+ 
++	config DEFAULT_SECURITY_ELFVERIFY
++		bool "ELFVerify" if SECURITY_ELFVERIFY=y
++
+ 	config DEFAULT_SECURITY_SMACK
+ 		bool "Simplified Mandatory Access Control" if SECURITY_SMACK=y
+ 
+@@ -271,6 +277,7 @@ endchoice
+ config DEFAULT_SECURITY
+ 	string
+ 	default "selinux" if DEFAULT_SECURITY_SELINUX
++	default "elfverify" if DEFAULT_SECURITY_ELFVERIFY
+ 	default "smack" if DEFAULT_SECURITY_SMACK
+ 	default "tomoyo" if DEFAULT_SECURITY_TOMOYO
+ 	default "apparmor" if DEFAULT_SECURITY_APPARMOR
+diff --git a/security/Makefile b/security/Makefile
+index 4d2d3782d..bce420259 100644
+--- a/security/Makefile
++++ b/security/Makefile
+@@ -5,6 +5,7 @@
+ 
+ obj-$(CONFIG_KEYS)			+= keys/
+ subdir-$(CONFIG_SECURITY_SELINUX)	+= selinux
++subdir-$(CONFIG_SECURITY_ELFVERIFY)	+= elfverify
+ subdir-$(CONFIG_SECURITY_SMACK)		+= smack
+ subdir-$(CONFIG_SECURITY_TOMOYO)        += tomoyo
+ subdir-$(CONFIG_SECURITY_APPARMOR)	+= apparmor
+@@ -19,6 +20,7 @@ obj-$(CONFIG_MMU)			+= min_addr.o
+ obj-$(CONFIG_SECURITY)			+= security.o
+ obj-$(CONFIG_SECURITYFS)		+= inode.o
+ obj-$(CONFIG_SECURITY_SELINUX)		+= selinux/
++obj-$(CONFIG_SECURITY_ELFVERIFY)		+= elfverify/
+ obj-$(CONFIG_SECURITY_SMACK)		+= smack/
+ obj-$(CONFIG_AUDIT)			+= lsm_audit.o
+ obj-$(CONFIG_SECURITY_TOMOYO)		+= tomoyo/
+diff --git a/security/elfverify/Kconfig b/security/elfverify/Kconfig
+new file mode 100644
+index 000000000..b7c4d8e12
+--- /dev/null
++++ b/security/elfverify/Kconfig
+@@ -0,0 +1,10 @@
++config SECURITY_ELFVERIFY
++       bool "elfverify support"
++       depends on SECURITY
++       depends on NET
++       select SECURITYFS
++       select SECURITY_PATH
++       select SECURITY_NETWORK
++       default y
++       help
++        This selects an elf verify for process invaking and volume mount/umount.
+diff --git a/security/elfverify/Makefile b/security/elfverify/Makefile
+new file mode 100644
+index 000000000..298d859cd
+--- /dev/null
++++ b/security/elfverify/Makefile
+@@ -0,0 +1 @@
++obj-y = elfverify.o partition.o chdev.o utils.o
+diff --git a/security/elfverify/chdev.c b/security/elfverify/chdev.c
+new file mode 100644
+index 000000000..cb35c5e68
+--- /dev/null
++++ b/security/elfverify/chdev.c
+@@ -0,0 +1,313 @@
++#include <linux/version.h>
++#include <linux/fs.h>
++#include <asm/segment.h>
++#include <asm/uaccess.h>
++#include <linux/buffer_head.h>
++#include <linux/limits.h>
++#include <linux/file.h>
++#include <linux/list.h>
++#include <linux/limits.h>
++#include <linux/slab.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
++#include <linux/sched/signal.h>
++#else
++#include <linux/sched.h>
++#endif
++#include <linux/miscdevice.h>
++
++#include "chdev.h"
++#include "utils.h"
++
++#define DEV_NAME	"elf_verifier"
++
++typedef struct __elf_verify_req__ {
++	pid_t pid;
++	int result;
++	struct list_head list;
++	char full_path[0];
++} elf_verifier_req;
++
++static struct elf_ver_dev_t {
++	struct miscdevice misc;
++	pid_t controller;
++	struct mutex lock;
++	struct list_head requests;
++	wait_queue_head_t resp_wq;
++	wait_queue_head_t reqs_wq;
++} elf_ver_dev;
++
++int _dev_init = 0;
++
++static int misc_dev_open(struct inode* si, struct file* filp)
++{
++	if (elf_ver_dev.controller)
++		return -EACCES;
++
++	elf_ver_dev.controller = current->pid;
++	return 0;
++}
++
++static int misc_dev_release(struct inode* si, struct file* filp)
++{
++	elf_ver_dev.controller = 0;
++	return 0;
++}
++
++static int read_requests_locked(int* total, char* kbuf, size_t size)
++{
++	elf_verifier_req* req;
++	char *p = kbuf;
++	mutex_lock(&elf_ver_dev.lock);
++	list_for_each_entry(req, &elf_ver_dev.requests, list) {
++		if (req->result != VERIFY_UNKNOWN)
++			continue;
++
++		*total = (*total) + 1;;
++		if (strlen(req->full_path) + 1 + p > kbuf + size)
++			break;
++		strcpy(p, req->full_path);
++		p += strlen(p) + 1;
++	}
++	mutex_unlock(&elf_ver_dev.lock);
++	return p - kbuf;
++}
++
++static ssize_t misc_dev_read(struct file* filp, char __user* buf, size_t size, loff_t* offset)
++{
++	DECLARE_WAITQUEUE(wait, current);
++	char *kbuf = NULL;
++	int n = 0;
++	int total = 0;
++
++	if (size <= 1)
++		return -EINVAL;
++
++	kbuf = kzalloc(size, GFP_KERNEL);
++	if (unlikely(kbuf == 0))
++		return -ENOSPC;
++
++	add_wait_queue(&elf_ver_dev.reqs_wq, &wait);
++
++	for (;;) {
++		total = 0;
++		n = read_requests_locked(&total, kbuf, size);
++		if (n) // data read out
++			break;
++
++		if (total == 0) { // no data
++			if (filp->f_flags & O_NONBLOCK) {
++				n = -EAGAIN;
++				goto readout;
++			}
++
++			__set_current_state(TASK_INTERRUPTIBLE);
++			//TODO: better to move unlock here (quite some code needs modification then)
++			schedule();
++		} else if (n == 0) { // has data but buf too small
++			n = 0;
++			goto readout;
++		}
++
++		if (signal_pending(current)) {
++			n = -EINTR;
++			goto readout;
++		}
++	}
++
++	if (copy_to_user(buf, kbuf, n))
++		n = -EFAULT;
++
++readout:
++	remove_wait_queue(&elf_ver_dev.reqs_wq, &wait);
++	set_current_state(TASK_RUNNING);
++	kfree(kbuf);
++	return n;
++}
++
++//test: echo -e -n "\x00/media/sf_D_DRIVE/raphael/temp/kernel-enh/mylib.so\x00" > /dev/elf_verifier
++static ssize_t misc_dev_write(struct file* filp, const char __user* buf, size_t size, loff_t* offset)
++{
++	elf_verifier_req* req = NULL;
++	char *kbuf = NULL;
++	char *p = NULL;
++	int total = 0;
++
++	if (size <= sizeof(unsigned char) + 1)
++		return -EINVAL;
++
++	kbuf = kzalloc(size, GFP_KERNEL);
++	if (unlikely(kbuf == 0))
++		return -ENOSPC;
++
++	if (copy_from_user(kbuf, buf, size)) {
++		kfree(kbuf);
++		return -EFAULT;
++	}
++
++	if (kbuf[size-1] != 0) {
++		kfree(kbuf);
++		return -EINVAL;
++	}
++
++	p = kbuf;
++	mutex_lock(&elf_ver_dev.lock);
++	while (p < kbuf + size) {
++		unsigned char result = *(unsigned char*)p;
++		p++;
++		if (result < VERIFY_OK || result >= VERIFY_UNKNOWN) {
++			p += strlen(p) + 1;
++			continue;
++		}
++
++		list_for_each_entry(req, &elf_ver_dev.requests, list) {
++			if (strcmp(req->full_path, p) || req->result != VERIFY_UNKNOWN)
++				continue;
++
++			req->result = result;
++			total++;
++		}
++		p += strlen(p) + 1;
++	}
++	mutex_unlock(&elf_ver_dev.lock);
++
++	kfree(kbuf);
++	if (total)
++		wake_up_interruptible(&elf_ver_dev.resp_wq);
++	return size;
++}
++
++static struct file_operations misc_dev_fops = {
++	.owner = THIS_MODULE,
++	.open = misc_dev_open,
++	.read = misc_dev_read,
++	.write = misc_dev_write,
++	.release = misc_dev_release
++};
++
++static elf_verifier_req* create_evr(const char* root, const char* path,
++				    unsigned int major, unsigned int minor)
++{
++	int path_size = 0;
++	elf_verifier_req *evr = NULL;
++
++	path_size = strlen(root) == 1 ? strlen(path) : strlen(root) + strlen(path);
++	evr = kzalloc(sizeof(elf_verifier_req) + path_size + 1, GFP_KERNEL);
++	if (unlikely(evr == 0))
++		return 0;
++
++	evr->pid = current->pid;
++	if (strlen(root) > 1 && path[0] != '/')
++		strcpy(evr->full_path, root);
++	else
++		evr->full_path[0] = 0;
++
++	strcat(evr->full_path, path);
++	evr->result = VERIFY_UNKNOWN;
++
++	mutex_lock(&elf_ver_dev.lock);
++	list_add_tail(&evr->list, &elf_ver_dev.requests);
++	mutex_unlock(&elf_ver_dev.lock);
++	pr_info("elf-to-be-verified: %s\n", evr->full_path);
++	return evr;
++}
++
++static void clean_requests_locked(pid_t pid)
++{
++	struct list_head *p = NULL, *next = NULL;
++	elf_verifier_req *req = NULL;
++
++	mutex_lock(&elf_ver_dev.lock);
++	list_for_each_safe(p, next, &elf_ver_dev.requests) {
++		req = list_entry(p, elf_verifier_req, list);
++		if (req->pid != pid)
++			continue;
++
++		list_del(p);
++		kfree(req);
++	}
++	mutex_unlock(&elf_ver_dev.lock);
++}
++
++static int get_response_nolock(elf_verifier_req* evr)
++{
++	struct list_head *p = NULL, *next = NULL;
++	elf_verifier_req *req = NULL;
++	int ret = 0;
++
++	list_for_each_safe(p, next, &elf_ver_dev.requests) {
++		req = list_entry(p, elf_verifier_req, list);
++		if (req->pid != evr->pid || strcmp(req->full_path, evr->full_path))
++			continue;
++
++		ret = req->result;
++		list_del(p);
++		kfree(req);
++		return ret;
++	}
++	return VERIFY_UNKNOWN;
++}
++
++int verify_elf(const char* root, const char* path,
++	       unsigned int major, unsigned int minor)
++{
++	DECLARE_WAITQUEUE(wait, current);
++	elf_verifier_req *evr = NULL;
++	int ret = 0;
++
++	evr = create_evr(root, path, major, minor);
++	if (evr == 0)
++		return VERIFY_NOMEM;
++
++	add_wait_queue(&elf_ver_dev.resp_wq, &wait);
++	wake_up_interruptible(&elf_ver_dev.reqs_wq);
++
++	ret = VERIFY_UNKNOWN;
++	mutex_lock(&elf_ver_dev.lock);
++	for (;;) {
++		__set_current_state(TASK_INTERRUPTIBLE);
++		mutex_unlock(&elf_ver_dev.lock);
++		schedule();
++
++		if (signal_pending(current)) {
++			clean_requests_locked(evr->pid);
++			ret = VERIFY_INTR;
++			goto out;
++		}
++
++		mutex_lock(&elf_ver_dev.lock);
++		ret = get_response_nolock(evr);
++		if (ret != VERIFY_UNKNOWN)
++			break;
++	}
++
++	mutex_unlock(&elf_ver_dev.lock);
++out:
++	remove_wait_queue(&elf_ver_dev.resp_wq, &wait);
++	set_current_state(TASK_RUNNING);
++	return ret;
++}
++
++int register_elf_verifier_dev(void)
++{
++	int error = 0;
++
++	if (_dev_init != 0) {
++		return 0;
++	}
++	_dev_init = 1;
++
++	elf_ver_dev.misc.minor = MISC_DYNAMIC_MINOR;
++	elf_ver_dev.misc.name = DEV_NAME;
++	elf_ver_dev.misc.fops = &misc_dev_fops;
++	elf_ver_dev.controller = 0;
++	mutex_init(&elf_ver_dev.lock);
++	INIT_LIST_HEAD(&elf_ver_dev.requests);
++	init_waitqueue_head(&elf_ver_dev.resp_wq);
++	init_waitqueue_head(&elf_ver_dev.reqs_wq);
++	error = misc_register(&elf_ver_dev.misc);
++	if (!error)
++		_dev_init = 2;
++	else
++		_dev_init = 0;
++	return error;
++}
+diff --git a/security/elfverify/chdev.h b/security/elfverify/chdev.h
+new file mode 100644
+index 000000000..b6c3abfdd
+--- /dev/null
++++ b/security/elfverify/chdev.h
+@@ -0,0 +1,11 @@
++#pragma once
++
++#define VERIFY_OK	0
++#define VERIFY_FAIL	1
++#define VERIFY_NOMEM	2
++#define VERIFY_INTR	3
++#define VERIFY_UNKNOWN	4
++
++int verify_elf(const char* root, const char* path,
++	       unsigned int major, unsigned int minor);
++int register_elf_verifier_dev(void);
+diff --git a/security/elfverify/elfverify.c b/security/elfverify/elfverify.c
+new file mode 100644
+index 000000000..1863d0f2b
+--- /dev/null
++++ b/security/elfverify/elfverify.c
+@@ -0,0 +1,249 @@
++/**
++ * Copyright (C) 2019 jouyouyun <jouyouwen717@gmail.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 3 of the License, or
++ * (at your option) any later version.
++ *
++ */
++
++#include <linux/lsm_hooks.h>
++#include <linux/path.h>
++#include <linux/file.h>
++#include <linux/slab.h>
++#include <uapi/asm-generic/mman-common.h>
++
++#include "partition.h"
++#include "chdev.h"
++#include "utils.h"
++
++// only use consecutive letters and numbers, otherwise
++// 'security_add_hooks' will fail
++#define ELFVERIFY_LSM_NAME "elfverify"
++
++#define MAX_COMM_LEN 16
++
++extern int _dev_init;
++static int _mount_init = 0;
++
++static void init_mounts_info(void)
++{
++	char *buf = NULL;
++	char *cur_path = NULL;
++	char *path_buf = NULL;
++	char *cmdline = NULL;
++	int size = 0;
++	int parts_count = 0;
++	int i = 0;
++
++	if (_mount_init != 0)
++		return;
++	_mount_init = 1;
++
++	if (!is_mnt_ns_valid()) {
++		_mount_init = 0;
++		return;
++	}
++
++	buf = read_file_content("/proc/self/mountinfo", &size);
++	if (!buf) {
++		_mount_init = 0;
++		return;
++	}
++
++	parts_count = parse_mounts_info(buf);
++	if (parts_count == -1) {
++		_mount_init = 0;
++		return;
++	}
++	_mount_init = 2;
++	kfree(buf);
++
++	path_buf = kzalloc(PATH_MAX, GFP_KERNEL);
++	if (likely(path_buf))
++		cur_path = file_path(get_task_exe_file(current), path_buf, PATH_MAX);
++
++	size = 0;
++	cmdline = read_file_content("/proc/self/cmdline", &size);
++	if (cmdline)
++		for (; i < size; i++) {
++			if (cmdline[i] != 0) continue;
++			if (cmdline[i+1] == 0) break;
++			cmdline[i] = ' ';
++		}
++
++	pr_info("partition count: %d, comm[%d]: %s, path: %s, cmdline: %s\n",
++		parts_count, current->pid, current->comm?current->comm:"NULL",
++		cur_path?cur_path:"NULL", cmdline);
++	if (path_buf)
++		kfree(path_buf);
++	if (cmdline)
++		kfree(cmdline);
++}
++
++static int hook_mmap_file(struct file *file, unsigned long reqprot,
++			  unsigned long prot, unsigned long flags)
++{
++	char *path = NULL;
++	char *buf = NULL;
++	char *cmd = NULL;
++	char *root = NULL;
++	dev_t dev;
++	unsigned int major = 0, minor = 0;
++	int error = 0;
++
++	if (unlikely(file == NULL) || unlikely(current == NULL) ||
++	    unlikely(current->comm == NULL))
++		return 0;
++
++	if (prot != (PROT_READ | PROT_EXEC) || (flags & MAP_PRIVATE) == 0)
++		return 0;
++
++	cmd = kzalloc(MAX_COMM_LEN + 1, GFP_KERNEL);
++	if (unlikely(cmd == NULL))
++		return 0;
++
++	if (likely(current && current->comm))
++		strcpy(cmd, current->comm);
++
++	// init mountinfo and register device
++	// systemd as the /sbin/init
++	// TODO(jouyouyun): check command absolute path '/lib/systemd/systemd'
++	if ((_dev_init == 0 || _mount_init == 0) && strcmp(cmd, "init") == 0) {
++		/* pr_info("[%s] command: %s, device(%d), mount(%d)\n", */
++		/* 	__func__, cmd, _dev_init, _mount_init); */
++		error = register_elf_verifier_dev();
++		if (!error)
++			init_mounts_info();
++		goto out;
++	}
++
++	if (_dev_init != 2 || _mount_init != 2) {
++		goto out;
++	}
++
++	if (unlikely(file->f_path.dentry == NULL) ||
++	    unlikely(file->f_path.dentry->d_sb == NULL) ||
++	    unlikely(file->f_path.dentry->d_name.name == NULL))
++		goto out;
++
++	root = kzalloc(NAME_MAX, GFP_KERNEL);
++	if (unlikely(root == NULL))
++		goto out;
++
++	dev = file->f_path.dentry->d_sb->s_dev;
++	major = MAJOR(dev);
++	minor = MINOR(dev);
++	get_root(root, major, minor);
++	if (*root == '/' && is_whitelist_mountpoint(root))
++		goto out;
++
++	buf = kzalloc(PATH_MAX, GFP_KERNEL);
++	if (unlikely(buf == NULL))
++		goto out;
++
++	path = d_absolute_path((const struct path *)&(file->f_path), buf, PATH_MAX);
++	if (IS_ERR(path)) {
++		goto out;
++	}
++
++	/* pr_info("current[%d]: %s, root: %s, mmap-file: %s, flags: 0x%lX\n", */
++	/* 	current->pid, cmd, root, path, flags); */
++	error = 0;
++	if (verify_elf(root, path, major, minor))
++		error = -EACCES;
++
++	pr_info("[%s] root: %s, cmd: %s, verify: %d\n", __func__, root, cmd, error);
++out:
++	if (buf) {
++		kfree(buf);
++		buf = NULL;
++	}
++	if (root) {
++		kfree(root);
++		root = NULL;
++	}
++
++	kfree(cmd);
++	cmd = NULL;
++	return error;
++}
++
++static int hook_sb_mount(const char *dev_name, const struct path *path,
++		const char *type, unsigned long flags, void *data)
++{
++	char *root = NULL;
++	char *buf = NULL;
++	char *raw_path = NULL;
++	unsigned int major = 0, minor = 0;
++
++	if (_mount_init != 2)
++		return 0;
++
++	if (unlikely(dev_name == NULL) || unlikely(path == NULL) || unlikely(path->dentry == NULL) ||
++	    unlikely(type == NULL))
++		return 0;
++
++	buf = kzalloc(PATH_MAX + 1, GFP_KERNEL);
++	if (unlikely(buf == NULL))
++		return 0;
++
++	raw_path = dentry_path_raw(path->dentry, buf, PATH_MAX);
++	if (IS_ERR(raw_path))
++		goto out;
++
++	pr_info("[%s] hook mount, device: %s, type: %s, raw name: %s\n", __func__, dev_name, type, raw_path);
++	if (!is_whitelist_mountpoint(raw_path) || strcmp(raw_path, "/") == 0)
++		return 0;
++
++	if (!is_mnt_ns_valid()) {
++		pr_warn("[%s] mnt ns invalid\n", __func__);
++		goto out;
++	}
++
++	if (is_special_mp(raw_path)) {
++		pr_warn("[%s] special mpunt point\n", __func__);
++		goto out;
++	}
++
++	// Not yet mounted, read from sysfs
++	if (get_major_minor_from_sysfs(dev_name, &major, &minor)) {
++	/* if (get_major_minor(dev_name, &major, &minor)) { */
++		pr_warn("[%s] failed to get_major_minor\n", __func__);
++		goto out;
++	}
++	pr_info("[%s] get major for device: %s, major: %u, minor: %u\n", __func__, dev_name, major, minor);
++
++	root = kzalloc(NAME_MAX + 1, GFP_KERNEL);
++	if (unlikely(root == NULL))
++		goto out;
++
++	get_root(root, major, minor);
++	pr_info("[%s] get root: %s, major: %u, minor: %u\n", __func__, root, major, minor);
++	// TODO(jouyouyun): handle mount failure
++	if (*root == 0 || strcmp(root, raw_path))
++		lsm_add_partition(raw_path, major, minor);
++
++out:
++	if (buf)
++		kfree(buf);
++	if (root)
++		kfree(root);
++	return 0;
++}
++
++static struct security_hook_list hooked_list[] __lsm_ro_after_init = {
++	LSM_HOOK_INIT(mmap_file, hook_mmap_file),
++	LSM_HOOK_INIT(sb_mount, hook_sb_mount),
++};
++
++static int __init elfverify_init(void)
++{
++	security_add_hooks(hooked_list, ARRAY_SIZE(hooked_list), ELFVERIFY_LSM_NAME);
++	pr_info("LSM initialized: %s\n", ELFVERIFY_LSM_NAME);
++
++	return 0;
++}
++
++security_initcall(elfverify_init);
+diff --git a/security/elfverify/partition.c b/security/elfverify/partition.c
+new file mode 100644
+index 000000000..4e60b772c
+--- /dev/null
++++ b/security/elfverify/partition.c
+@@ -0,0 +1,190 @@
++#include <linux/path.h>
++#include <linux/file.h>
++#include <linux/list.h>
++#include <linux/fs.h>
++#include <linux/slab.h>
++#include <asm/segment.h>
++#include <asm/uaccess.h>
++#include <linux/nsproxy.h>
++#include <linux/namei.h>
++#include <linux/buffer_head.h>
++
++#include "partition.h"
++#include "utils.h"
++
++typedef struct __verify_partition__ {
++	unsigned int major, minor;
++	struct list_head list;
++	char root[0];
++} verify_partition;
++
++static DECLARE_RWSEM(rw_parts);
++static LIST_HEAD(partitions);
++
++int is_whitelist_mountpoint(const char *mp)
++{
++	static char *whitelist[] = {"/", "/boot", "/usr", NULL};
++	int i = 0;
++
++	for (; whitelist[i]; i++) {
++		if (strcmp(whitelist[i], mp) == 0)
++			return 1;
++	}
++
++	return 0;
++}
++
++void get_root(char* root,
++	      unsigned int major, unsigned int minor)
++{
++	verify_partition *part = NULL;
++
++	// TODO(jouyouyun): device has multi mount points
++	*root = 0;
++	down_read(&rw_parts);
++	list_for_each_entry(part, &partitions, list) {
++		if (part->major == major && part->minor == minor) {
++			strcpy(root, part->root);
++			break;
++		}
++	}
++	up_read(&rw_parts);
++}
++
++void lsm_add_partition(const char* dir_name,
++		       unsigned int major, unsigned int minor)
++{
++	verify_partition *part = NULL;
++
++	part = kzalloc(sizeof(verify_partition) + strlen(dir_name) + 1, GFP_KERNEL);
++	if (unlikely(part == 0)) {
++		pr_err("kzalloc failed and thus cant add %s [%d, %d] to partitions\n",
++		       dir_name, major, minor);
++		return;
++	}
++
++	part->major = major;
++	part->minor = minor;
++	strcpy(part->root, dir_name);
++	down_write(&rw_parts);
++	list_add_tail(&part->list, &partitions);
++	up_write(&rw_parts);
++}
++
++int get_major_minor_from_sysfs(const char *dev_name,
++			       unsigned int* major, unsigned int* minor)
++{
++	char *content = NULL;
++	char filename[PATH_MAX + 21] = {0};
++	int size = 0;
++	unsigned int ma = 0, mi = 0;
++
++	if (strstr(dev_name, "/dev/") != dev_name)
++		return 1;
++
++	memset(filename, 0, PATH_MAX + 21);
++	sprintf(filename, "/sys/class/block/%s/dev", dev_name + 5);
++	content = read_file_content(filename, &size);
++	if (!content)
++		return 1;
++
++	if (content[size-1] == '\n')
++		content[size-1] = '\0';
++	if (sscanf(content, "%u:%u", &ma, &mi) != 2) {
++		kfree(content);
++		content = NULL;
++		return 1;
++	}
++
++	kfree(content);
++	content = NULL;
++
++	if (ma == 0 || mi == 0)
++		return 1;
++
++	*major = ma;
++	*minor = mi;
++	return 0;
++}
++
++int parse_mounts_info(char* buf)
++{
++	verify_partition* part = NULL;
++	char *mp = NULL;
++	char *line = NULL;
++	unsigned int major = 0, minor = 0;
++	int parts_count = 0;
++
++	mp = kzalloc(NAME_MAX, GFP_KERNEL);
++	if (unlikely(mp == NULL))
++		return -1;
++
++	line = buf;
++	while (sscanf(line, "%*d %*d %u:%u %*s %250s %*s %*s %*s %*s %*s %*s\n", &major, &minor, mp) == 3) {
++		line = strchr(line, '\n') + 1;
++
++		if (is_special_mp(mp)) {
++			memset(mp, 0, NAME_MAX);
++			continue;
++		}
++
++		part = kzalloc(sizeof(verify_partition) + strlen(mp) + 1, GFP_KERNEL);
++		if (unlikely(part == 0)) {
++			pr_err("verify-partition kzalloc failed for %s\n", mp);
++			memset(mp, 0, NAME_MAX);
++			continue;
++		}
++		part->major = major;
++		part->minor = minor;
++		strcpy(part->root, mp);
++		memset(mp, 0, NAME_MAX);
++		list_add_tail(&part->list, &partitions);
++	}
++	kfree(mp);
++	mp = NULL;
++
++	// __init section doesnt need lock
++	part = NULL;
++	list_for_each_entry(part, &partitions, list) {
++		parts_count++;
++		pr_info("mp: %s, major: %d, minor: %d\n", part->root, part->major, part->minor);
++	}
++	return parts_count;
++}
++
++static int mounted_at(const char* mp, const char* root)
++{
++	return strcmp(mp, root) == 0 ||
++		(strlen(mp) > strlen(root) && strstr(mp, root) == mp && mp[strlen(root)] == '/');
++}
++
++int is_special_mp(const char *mp)
++{
++	static char *mp_list[] = {"/sys", "/proc", "/run", "/dev", NULL};
++	int i = 0;
++
++	if (!mp || *mp != '/')
++		return 1;
++
++	for (; mp_list[i]; i++)
++		if (mounted_at(mp, mp_list[i]))
++			return 1;
++
++	return 0;
++}
++
++int is_mnt_ns_valid(void)
++{
++	static struct mnt_namespace* init_mnt_ns = NULL;
++
++	if (init_mnt_ns == 0) {
++		if (current && current->nsproxy)
++			init_mnt_ns = current->nsproxy->mnt_ns;
++		return init_mnt_ns != NULL;
++	}
++
++	if (current && current->nsproxy && current->nsproxy->mnt_ns != init_mnt_ns)
++		return 0;
++
++	return 1;
++}
+diff --git a/security/elfverify/partition.h b/security/elfverify/partition.h
+new file mode 100644
+index 000000000..11564cace
+--- /dev/null
++++ b/security/elfverify/partition.h
+@@ -0,0 +1,12 @@
++#pragma once
++
++int is_whitelist_mountpoint(const char *mp);
++void get_root(char* root,
++	      unsigned int major, unsigned int minor);
++void lsm_add_partition(const char* dir_name,
++		       unsigned int major, unsigned int minor);
++int get_major_minor_from_sysfs(const char *dev_name,
++			       unsigned int* major, unsigned int* minor);
++int is_special_mp(const char* mp);
++int is_mnt_ns_valid(void);
++int parse_mounts_info(char* buf);
+diff --git a/security/elfverify/utils.c b/security/elfverify/utils.c
+new file mode 100644
+index 000000000..47f64784e
+--- /dev/null
++++ b/security/elfverify/utils.c
+@@ -0,0 +1,68 @@
++#include <linux/version.h>
++#include <linux/file.h>
++#include <linux/fs.h>
++#include <linux/slab.h>
++#include <asm/segment.h>
++#include <asm/uaccess.h>
++#include <linux/buffer_head.h>
++
++
++#include "utils.h"
++
++#define ALLOC_UNIT (1<<12)
++
++/*
++  kernel_read_file_from_path cant be used here because:
++  1. procfs doesnt have i_size, which is used by kernel_read_file, which is in turn called by k_r_f_f_p
++  2. we want to avoid security_XXX calls
++*/
++char *read_file_content(const char *filename, int *real_size)
++{
++	struct file *filp = NULL;
++	char *buf = NULL;
++	mm_segment_t old_fs;
++	loff_t off = 0;
++	int size = ALLOC_UNIT;
++
++	if (unlikely(filename == NULL) || unlikely(real_size == NULL))
++		return NULL;
++
++	filp = filp_open(filename, O_RDONLY, 0);
++	if (IS_ERR(filp)) {
++		pr_warn("[%s] failed to open: %s\n", __func__, filename);
++		return NULL;
++	}
++
++	old_fs = get_fs();
++	set_fs(get_fs());
++
++	while(1) {
++		buf = kzalloc(size, GFP_KERNEL);
++		if (unlikely(buf == NULL))
++			break;
++
++		off = 0;
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
++		*real_size = kernel_read(filp, buf, size, &off);
++#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
++		*real_size = vfs_read(filp, (char __user*)buf, size, &off);
++#else
++		*real_size = __vfs_read(filp, (char __user*)buf, size, &off);
++#endif
++		if (*real_size > 0 && *real_size < size) {
++			buf[*real_size] = 0;
++			break;
++		}
++
++		kfree(buf);
++		buf = NULL;
++		if (*real_size != 0)
++			size += ALLOC_UNIT;
++		else
++			break;
++	}
++
++	set_fs(old_fs);
++	filp_close(filp, 0);
++	return buf;
++}
+diff --git a/security/elfverify/utils.h b/security/elfverify/utils.h
+new file mode 100644
+index 000000000..d76b0947f
+--- /dev/null
++++ b/security/elfverify/utils.h
+@@ -0,0 +1,3 @@
++#pragma once
++
++char* read_file_content(const char* filename, int *real_size);
