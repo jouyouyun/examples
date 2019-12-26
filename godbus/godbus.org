@@ -1,0 +1,159 @@
+#+OPTIONS: toc:nil
+#+OPTIONS: ^:{}
+
+** 什么是 `DBus`?
+
+=DBus= 是一个用于进程间通信的消息总线，每个消息都有对应的源，对象和目的。使用 =DBus= 的应用程序都会导出一组对象，通过这些对象来发送和接受消息，对象路径在 =Bus= 上必须是唯一的。
+
+=DBus= 支持四种类型的消息：方法调用，方法返回，信号和错误，每个对象都可以实现一个或多个类型的消息。
+
+=DBus= 分为 =system bus= 和 =session bus=。=system bus= 既是系统级的 =Bus=，以 =root= 权限运行，访问其上提供的对象服务是需要相应的权限的，在它的配置文件中指明。一般为那些只有 =root= 权限才能访问操作的资源提供接口，便于用户层操作。
+
+=session bus= 则是运行在当前用户 =session= 上的，提供本地用户的资源接口，只有当前用户才能访问。
+
+目前 =linux= 桌面环境大多使用 =dbus= 作为进程间通信的方法，前后端通过 =DBus= 来交互，下面就以 =Go= 来演示 =DBus= 服务的创建和使用。
+
+
+## 构建一个 =DBus= 服务
+
+=github.com/godbus/dbus= 提供了 =go= 版本的 =DBus= 绑定，所以先安装它：
+
+=go get -v github.com/godbus/dbus=
+
+构建 =DBus= 服务需要以下几步：
+
+1. 获取 =bus connection=, 分为 =system= 和 =session= 两种, 依据程序的用途选择
+2. 在 =bus= 上请求一个 =name=，=name= 要求以 =.= 进行连接的单词
+3. 导出服务对象
+
+*但在实际使用中, 建议把第 =2= 步放到最后. 不然的话, 可能在调用你的接口时, 你的 =service name= 存在但接口并未导出, 所有将注册 =name= 的操作放到最后.*
+
+一份简单的代码如下：
+
+#+BEGIN_SRC go
+package main
+
+import (
+	"fmt"
+
+	"github.com/godbus/dbus"
+	"github.com/godbus/dbus/introspect"
+	"github.com/godbus/dbus/prop"
+)
+
+const (
+	dbusService = "org.jouyouyun.Test"
+	dbusPath    = "/org/jouyouyun/Test"
+	dbusIFC     = "org.jouyouyun.Test"
+)
+
+// Test dbus server test codes
+type Test struct {
+	conn *dbus.Conn
+
+	name string
+}
+
+// Hello return name
+func (t *Test) Hello() (string, *dbus.Error) {
+	return fmt.Sprintf("Hello, I'm %s", t.name), nil
+}
+
+// SetName change name
+func (t *Test) SetName(v string) *dbus.Error {
+	if t.name == v {
+		return nil
+	}
+	t.name = v
+	// Emit changed
+	t.conn.Emit(dbusPath, dbusIFC+".Name", "Name", v)
+	return nil
+}
+
+// makeProps set service properties
+func (t *Test) makeProps() map[string]map[string]*prop.Prop {
+	return map[string]map[string]*prop.Prop{
+		dbusIFC: {
+			// prop name
+			"Name": &prop.Prop{
+				Value:    &t.name,       // 将 Test.name 绑定到属性的值上, 这样更改 Test.name 就可更改属性值
+				Writable: false,         // 属性是否可写
+				Emit:     prop.EmitTrue, // 是否发送属性改变信号
+				Callback: func(c *prop.Change) *dbus.Error {
+					// 属性改变时的处理函数
+					fmt.Println("[Server]", c.Name, "change to", c.Value)
+					return nil
+				},
+			},
+		},
+	}
+}
+
+func main() {
+	conn, err := dbus.SessionBus()
+	if err != nil {
+		fmt.Println("Failed to connect session bus:", err)
+		return
+	}
+
+	var t = &Test{conn: conn, name: "Joy"}
+	err = conn.Export(t, dbusPath, dbusIFC)
+	if err != nil {
+		fmt.Println("Failed to export 'Test':", err)
+		return
+	}
+	props := prop.New(conn, dbusPath, t.makeProps())
+	propNode := &introspect.Node{
+		Name: dbusService,
+		Interfaces: []introspect.Interface{
+			// org.freedesktop.DBus.Introspectable 接口信息, 内置好了
+			introspect.IntrospectData,
+			// org.freedesktop.DBus.Properties 接口信息
+			prop.IntrospectData,
+			// org.jouyouyun.Test 的接口信息, 在这里设置 Methods, Signals, Props, 这也是最常用的
+			{
+				Name:       dbusIFC,
+				Methods:    introspect.Methods(t),        // 从 Test 中自动获取 methods, 要求 method 首字母, 并且返回值最好要加上 *dbus.Error
+				Properties: props.Introspection(dbusIFC), // 根据 makeProps 创建的
+				Signals: []introspect.Signal{ // 创建了一个 Changed 信号, 包含2个字符串类型的参数
+					{
+						Name: "Changed",
+						Args: []introspect.Arg{
+							{
+								Name: "key",
+								Type: "s",
+							},
+							{
+								Name: "value",
+								Type: "s",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	err = conn.Export(introspect.NewIntrospectable(propNode),
+		dbusPath, "org.freedesktop.DBus.Introspectable")
+	if err != nil {
+		fmt.Println("Failed to export prop node:", err)
+		return
+	}
+
+	// request name
+	reply, err := conn.RequestName(dbusService, dbus.NameFlagDoNotQueue)
+	if err != nil {
+		fmt.Println("Failed to request:", err)
+		return
+	}
+
+	// 检查是否是这个 name 的拥有者
+	if reply != dbus.RequestNameReplyPrimaryOwner {
+		fmt.Println("The service name has been owned")
+		return
+	}
+
+	// loop
+	select {}
+}
+#+END_SRC

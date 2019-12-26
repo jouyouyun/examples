@@ -69,20 +69,11 @@ static void query_filepath(const char *filename)
 
 	pr_info("[%s] Print dentry\n", __func__);
 	if (likely(path.dentry)) {
-		pr_info("[%s] Name: %s\n", __func__, path.dentry->d_name.name);
+		pr_info("[%s] Name: %s, symlink: %s\n", __func__, path.dentry->d_name.name,
+			d_is_symlink(path.dentry)?"yes":"no");
+			/* (path.dentry->d_flags & DCACHE_ENTRY_TYPE == DCACHE_SYMLINK_TYPE)?"yes":"no"); */
 		if (likely(path.dentry->d_sb))
 			pr_info("[%s] Device: %u\n", __func__, path.dentry->d_sb->s_dev);
-	}
-
-	pr_info("[%s] Print mnt\n", __func__);
-	if (likely(path.mnt)) {
-		if (likely(path.mnt->mnt_root)) {
-			pr_info("[%s] Name: %s\n", __func__, path.mnt->mnt_root->d_name.name);
-			if (likely(path.mnt->mnt_root->d_sb))
-				pr_info("[%s] Device: %u\n", __func__, path.mnt->mnt_root->d_sb->s_dev);
-		}
-		if (likely(path.mnt->mnt_sb))
-			pr_info("[%s] Device: %u\n", __func__, path.mnt->mnt_sb->s_dev);
 	}
 }
 

@@ -1,0 +1,18 @@
+#+OPTIONS: toc:nil num:nil date:nil timestamp:nil ^:{} <:{}
+#+TITLE: Signature File Format
+
+Format contains header and data.
+
+** Header
+
+Header structure:
+
+#+BEGIN_SRC go
+type SignHeaderSubject struct {
+
+}
+
+type SignFileHeader struct {
+
+}
+#+END_SRC
