@@ -330,7 +330,7 @@ static char*
 map_file(const char *filename, size_t *size)
 {
 	int fd = 0;
-	struct stat st = {0};
+	struct stat st;
 	char *cache_addr = NULL;
 
 	fd = open(filename, O_RDONLY);
