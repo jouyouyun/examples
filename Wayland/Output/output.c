@@ -1,7 +1,7 @@
 /**
  * Test wayland output
  *
- * Compile: gcc -Wall -g output.c `pkg-config --libs --cflags wayland-client`
+ * Compile: gcc -Wall -g output.c `pkg-config --libs --cflags wayland-client wayland-server`
  *
  **/
 #include <stdio.h>
@@ -9,7 +9,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
+#include <wayland-client.h>
+#include <wayland-server.h>
+#include <wayland-server-protocol.h>
 #include <wayland-client.h>
 
 #define MIN(x,y) (((x)<(y))?(x):(y))
@@ -65,6 +70,7 @@ static void output_handle_mode(void *data, struct wl_output *output, uint32_t fl
 static void output_handle_scale(void *data, struct wl_output *output, int32_t scale);
 static void output_handle_done(void *data, struct wl_output *output);
 
+static int wl_fd = -1;
 static struct wl_display *dpy = NULL;
 struct wl_registry *reg = NULL;
 static const struct wl_registry_listener reg_listener = {
@@ -82,25 +88,38 @@ static int output_done = 0;
 int
 main(int argc, char *argv[])
 {
+	int error = 0;
 	struct wl_list output_infos;
 
-	dpy = wl_display_connect(NULL);
+	if (argc !=2 ) {
+		fprintf(stderr, "Usage: %s <wayland sock path>\n", argv[0]);
+		return 0;
+	}
+
+	wl_fd = open(argv[1], O_RDWR);
+	if (wl_fd < 0) {
+		fprintf(stderr, "Failed to open wayland: %s\n", strerror(errno));
+		return -1;
+	}
+
+	dpy = wl_display_connect_to_fd(wl_fd);
 	if (!dpy) {
 		fprintf(stderr, "Failed to connect wayland display: %s\n", strerror(errno));
-		return -ErrDisplayConnect;
+		error = -ErrDisplayConnect;
+		goto out;
 	}
 
 	wl_list_init(&output_infos);
 	reg = wl_display_get_registry(dpy);
 	if (!reg) {
 		fprintf(stderr, "Failed to get registry: %s\n", strerror(errno));
-		return -ErrRegistryGet;
+		error = -ErrRegistryGet;
+		goto out;
 	}
 
 	wl_registry_add_listener(reg, &reg_listener, &output_infos);
 
 	do {
-		/* sleep(1); */
 		output_done = 0;
 		wl_display_roundtrip(dpy);
 	} while(output_done);
@@ -109,7 +128,14 @@ main(int argc, char *argv[])
 
 	destroy_output_infos(&output_infos);
 
-	return 0;
+out:
+	if (wl_fd > 0)
+		close(wl_fd);
+
+	if (dpy)
+		wl_display_disconnect(dpy);
+
+	return error;
 }
 
 static void
