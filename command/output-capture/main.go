@@ -16,17 +16,19 @@ func example2(cmdName string) {
 		return
 	}
 
-	oneByte := make([]byte, 5120)
-	for {
-		_, err := stdout.Read(oneByte)
-		if err != nil {
-			fmt.Printf(err.Error())
-			break
+	go func() {
+		oneByte := make([]byte, 5120)
+		for {
+			_, err := stdout.Read(oneByte)
+			if err != nil {
+				fmt.Printf(err.Error())
+				break
+			}
+			r := bufio.NewReader(stdout)
+			line, _, _ := r.ReadLine()
+			fmt.Println("[Output]:", string(line))
 		}
-		r := bufio.NewReader(stdout)
-		line, _, _ := r.ReadLine()
-		fmt.Println("[Output]:", string(line))
-	}
+	}()
 
 	err = cmd.Wait()
 	if err != nil {
