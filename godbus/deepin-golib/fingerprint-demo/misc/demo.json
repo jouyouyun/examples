@@ -1,0 +1,6 @@
+{
+    "service": "com.deepin.Fingerprint.Demo",
+    "path": "/com/deepin/Fingerprint/Demo",
+    "interface": "com.deepin.Fingerprint",
+    "type": 1
+}

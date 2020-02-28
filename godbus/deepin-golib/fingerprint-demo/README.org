@@ -1,0 +1,22 @@
+#+OPTIONS: toc:nil num:nil ^:{} <:{}
+#+TITLE: Deepin Fingerprint Demo
+
+指纹接口 =demo= 程序，根据指纹适配文档实现。
+
+** 测试
+
+*** Build
+
+=make=
+
+*** Install
+
+~sudo make install PREFIX=/usr~
+
+*** Uninstall
+
+~sudo make uninstall PREFIX=/usr~
+
+--------
+
+附件中也提供了编译好的程序，可在 =x86= 下可直接使用
