@@ -8,3 +8,5 @@ test.xlsx
 
 node_modules
 /vue/*/package-lock.json
+
+.ccls-cache
