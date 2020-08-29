@@ -1,0 +1,122 @@
+diff --git a/security/Kconfig b/security/Kconfig
+index ec7822615..ad04b5943 100644
+--- a/security/Kconfig
++++ b/security/Kconfig
+@@ -236,6 +236,7 @@ source security/tomoyo/Kconfig
+ source security/apparmor/Kconfig
+ source security/loadpin/Kconfig
+ source security/yama/Kconfig
++source security/demo/Kconfig
+ 
+ source security/integrity/Kconfig
+ 
+diff --git a/security/Makefile b/security/Makefile
+index e9fce146d..f8afea46a 100644
+--- a/security/Makefile
++++ b/security/Makefile
+@@ -9,6 +9,7 @@ subdir-$(CONFIG_SECURITY_SMACK)		+= smack
+ subdir-$(CONFIG_SECURITY_TOMOYO)        += tomoyo
+ subdir-$(CONFIG_SECURITY_APPARMOR)	+= apparmor
+ subdir-$(CONFIG_SECURITY_YAMA)		+= yama
++subdir-$(CONFIG_SECURITY_DEMO)		+= demo
+ subdir-$(CONFIG_SECURITY_LOADPIN)	+= loadpin
+ 
+ # always enable default capabilities
+@@ -25,6 +25,7 @@ obj-$(CONFIG_AUDIT)			+= lsm_audit.o
+ obj-$(CONFIG_SECURITY_TOMOYO)		+= tomoyo/
+ obj-$(CONFIG_SECURITY_APPARMOR)		+= apparmor/
+ obj-$(CONFIG_SECURITY_YAMA)		+= yama/
++obj-$(CONFIG_SECURITY_DEMO)		+= demo/
+ obj-$(CONFIG_SECURITY_LOADPIN)		+= loadpin/
+ obj-$(CONFIG_CGROUP_DEVICE)		+= device_cgroup.o
+ 
+diff --git a/security/demo/Kconfig b/security/demo/Kconfig
+new file mode 100644
+index 000000000..1e96707ca
+--- /dev/null
++++ b/security/demo/Kconfig
+@@ -0,0 +1,7 @@
++config SECURITY_DEMO
++       bool "lsm demo support"
++       depends on SECURITY
++       depends on NET
++       default y
++       help
++        This selects demo for process for socket_create.
+diff --git a/security/demo/Makefile b/security/demo/Makefile
+new file mode 100644
+index 000000000..87efe1675
+--- /dev/null
++++ b/security/demo/Makefile
+@@ -0,0 +1 @@
++obj-y = demo.o
+diff --git a/security/demo/demo.c b/security/demo/demo.c
+new file mode 100644
+index 000000000..085d58eea
+--- /dev/null
++++ b/security/demo/demo.c
+@@ -0,0 +1,64 @@
++/**
++ * Copyright (C) 2019 jouyouyun <jouyouwen717@gmail.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 3 of the License, or
++ * (at your option) any later version.
++ *
++ */
++
++#include <linux/version.h>
++#include <linux/lsm_hooks.h>
++//#include <linux/namei.h>
++//#include <linux/slab.h>
++#include <linux/net.h>
++#include <linux/socket.h>
++#include <uapi/asm-generic/mman-common.h>
++
++#define DEMO_LSM_NAME "demo"
++
++#define MAX_PID_LEN 8 // pid max(/proc/sys/kernel/pid_max)
++
++static int hook_socket_create(int family, int type, int protocol, int kern)
++{
++	char pid_str[MAX_PID_LEN] = {0};
++
++	if (kern)
++		return 0;
++
++	// ip4: AF_INET; ip6: AF_INET6
++	if (family != AF_INET && family != AF_INET6)
++		return 0;
++
++	// tcp: SOCK_STREAM; udp: SOCK_DGRAW
++	if (type != SOCK_STREAM && type != SOCK_DGRAM)
++		return 0;
++
++	if (unlikely(current == NULL))
++		return 0;
++
++	pr_debug("[%s] family: %d, type: %d, protocol: %d, pid: %d\n", __func__, family, type, protocol, current->pid);
++	memset(pid_str, 0, MAX_PID_LEN);
++	snprintf(pid_str, MAX_PID_LEN, "%d", current->pid);
++
++	// forbidden 'tssock' create socket
++	if (strcmp(current->comm, "tssock") == 0)
++		return -1;
++
++	return 0;
++}
++
++static struct security_hook_list hooked_list[] __lsm_ro_after_init = {
++	LSM_HOOK_INIT(socket_create, hook_socket_create),
++};
++
++static int __init demo_init(void)
++{
++	security_add_hooks(hooked_list, ARRAY_SIZE(hooked_list), DEMO_LSM_NAME);
++	pr_info("LSM initialized: %s\n", DEMO_LSM_NAME);
++
++	return 0;
++}
++
++security_initcall(demo_init);
