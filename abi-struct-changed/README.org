@@ -1,0 +1,195 @@
+# % Options Settings: https://orgmode.org/manual/Export-Settings.html
+#+OPTIONS: timestamp:nil ^:nil <:nil p:t prop:t tags:t tasks:t todo:t
+#+LATEX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,12pt]
+#+LATEX_HEADER: \usepackage{booktabs}
+# % to include pdf/eps/png files
+#+LATEX_HEADER: \usepackage{indentfirst}
+#+LATEX_HEADER: \usepackage{graphicx}
+# % useful to add 'todo' markers
+#+LaTeX_HEADER: \usepackage{todonotes}
+# % hyperrefs
+#+LaTeX_HEADER: \usepackage{hyperref}
+# % ----------------- Code blocks ----------------
+# % Dependencies: pip install pygments
+# % nice source code formatting
+#+LaTeX_HEADER: \usepackage[utf8]{inputenc}
+#+LaTeX_HEADER: \usepackage{xcolor}
+#+LaTeX_HEADER: \definecolor{bg}{rgb}{0.98,0.98,0.98}
+#+LaTeX_HEADER: \usepackage{minted}
+#+LaTeX_HEADER: \setminted{
+#+LaTeX_HEADER:   mathescape,
+#+LaTeX_HEADER:   linenos,
+#+LaTeX_HEADER:   numbersep=5pt,
+#+LaTeX_HEADER:   frame=lines,
+#+LaTeX_HEADER:   framesep=2mm,
+#+LaTeX_HEADER:   autogobble,
+#+LaTeX_HEADER:   style=tango,
+#+LaTeX_HEADER:   bgcolor=bg
+#+LaTeX_HEADER: }
+# % ----------------- Code blocks ----------------
+# % change style of section headings
+#+LaTeX_HEADER: \usepackage{sectsty}
+#+LaTeX_HEADER: \allsectionsfont{\sffamily}
+# % only required for orgmode ticked TODO items, can remove
+#+LaTeX_HEADER: \usepackage{amssymb}
+# % only required for underlining text
+#+LaTeX_HEADER: \usepackage[normalem]{ulem}
+# % often use this in differential operators:
+#+LaTeX_HEADER: \renewcommand{\d}{\ensuremath{\mathrm{d}}}
+# % allow more reasonable text width for most documents than LaTeX default
+#+LaTeX_HEADER: \setlength{\textheight}{21cm}
+#+LaTeX_HEADER: \setlength{\textwidth}{16cm}
+# % reduce left and right margins accordingly
+#+LaTeX_HEADER: \setlength{\evensidemargin}{-0cm}
+#+LaTeX_HEADER: \setlength{\oddsidemargin}{-0cm}
+# % reduce top margin
+#+LaTeX_HEADER: \setlength{\topmargin}{0cm}
+# % Increase default line spacing a little if desired
+#+LaTeX_HEADER: %\renewcommand{\baselinestretch}{1.2}
+# % tailored float handling
+#+LaTeX_HEADER: %\renewcommand{\topfraction}{0.8}
+#+LaTeX_HEADER: %\renewcommand{\bottomfraction}{0.6}
+#+LaTeX_HEADER: %\renewcommand{\textfraction}{0.2}
+# % references formats
+#+LaTeX_HEADER: \usepackage[round]{natbib}
+# % Chinese supported
+#+LATEX_HEADER: \usepackage{xeCJK}
+# % references formats
+#+LATEX_HEADER: \usepackage[round]{natbib}
+#+LATEX_HEADER: \setCJKmainfont{Noto Sans CJK SC}
+#+LATEX_HEADER: \setCJKsansfont{Noto Sans CJK SC}
+#+LATEX_HEADER: \setCJKmonofont{Noto Sans Mono CJK SC}
+# % End of Chinese supported
+# Generate Tex File: C-c C-e l l; then replace verbatim with minted, and must special the code language
+#+LATEX_HEADER: % Generate PDF: xelatex -shell-escape <tex file>
+#+AUTHOR: jouyouyun
+#+EMAIL: yanbowen717@gmail.com
+#+TITLE: ABI 结构体变动测试
+
+一个应用 =AppA= 使用了动态库 =LibA= ，此时更新 =LibA= 的结构体成员，在中间位置添加成员，需要重新编译生成 =AppA= 才能得到正确的结果。
+
+本文针对这个问题进行了验证，具体代码见下文。
+
+** 代码
+
+*** 设计说明
+
+设计了一个动态库 =libtest= ，里面包含了一个结构体，结构体里有 =2= 个 =int= 成员，另外提供了一个创建此结构体的方法，创建结构体对每个成员指定了默认值。
+
+复制了上述的动态库，在结构体成员之间添加了一个新的成员，创建接口里照样指定了新成员的默认值。
+
+编写了一个应用，基于原始动态库进行编译，应用执行后会打印原始动态库成员的值。使用 =LD_LIBRARY_PATH= 指定不同的 =libtest= 路径来运行应用，输出的结果应该不一致。
+证明结构体成员变动后需要重新编译应用。
+
+*** 目录结构
+
+#+begin_src shell
+./
+├── changed
+│   ├── Makefile
+│   ├── test.c
+│   └── test.h
+├── main.c
+├── Makefile
+├── README.org
+└── origin
+    ├── Makefile
+    ├── test.c
+    └── test.h
+#+end_src
+
+*** 文件说明
+
++ =origin=
+
+  原始的动态库的代码
+
++ =changed=
+
+  添加了成员的动态库代码
+
++ =main.c=
+
+  测试程序代码
+
+*** 测试步骤
+
+执行以下命令进行测试：
+
+#+begin_src shell
+make build
+make run-origin
+make run-changed
+#+end_src
+
+输出结果如下：
+#+begin_src shell
+$ make build
+cd ./origin && make rebuild && cd ..
+make[1]: 进入目录“./origin”
+rm -f libtest.so
+gcc -shared -fPIC -o libtest.so test.c
+make[1]: 离开目录“./origin”
+cd ./changed && make rebuild && cd ..
+make[1]: 进入目录“./changed”
+rm -f libtest.so
+gcc -shared -fPIC -o libtest.so test.c
+make[1]: 离开目录“./changed”
+gcc -Wall -g -L./origin -ltest -o abi_test main.c
+
+$ make run-origin
+env LD_LIBRARY_PATH=./origin ./abi_test
+Test: (1, 3)
+
+$ make run-changed
+env LD_LIBRARY_PATH=./changed ./abi_test
+Test: (1, 2)
+#+end_src
+
+*** 代码内容
+
+**** origin
+
++ =test.h=
+
+#+INCLUDE: ./origin/test.h src c
+
+
++ =test.c=
+
+#+INCLUDE: ./origin/test.c src c
+
++ =Makefile=
+
+#+INCLUDE: ./origin/Makefile src makefile
+
+**** changed
+
+这里只给出相对 =origin= 变动的代码：
+
++ =test.h=
+
+#+begin_src diff
+$ diff origin/test.h changed/test.h
+5a6
+> 	int aa;
+#+end_src
+
++ =test.c=
+
+#+begin_src diff
+$ diff origin/test.c changed/test.c
+12a13
+> 	p->aa = 2;
+#+end_src
+
+**** app
+
++ =main.c=
+
+#+INCLUDE: ./main.c src c
+
++ =Makefile=
+
+#+INCLUDE: ./Makefile src makefile

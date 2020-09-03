@@ -1,0 +1,323 @@
+% Intended LaTeX compiler: pdflatex
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{indentfirst}
+\usepackage{graphicx}
+\usepackage{todonotes}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage{xcolor}
+\definecolor{bg}{rgb}{0.98,0.98,0.98}
+\usepackage{minted}
+\setminted{
+mathescape,
+linenos,
+numbersep=5pt,
+frame=lines,
+framesep=2mm,
+autogobble,
+style=tango,
+bgcolor=bg
+}
+\usepackage{sectsty}
+\allsectionsfont{\sffamily}
+\usepackage{amssymb}
+\usepackage[normalem]{ulem}
+\renewcommand{\d}{\ensuremath{\mathrm{d}}}
+\setlength{\textheight}{21cm}
+\setlength{\textwidth}{16cm}
+\setlength{\evensidemargin}{-0cm}
+\setlength{\oddsidemargin}{-0cm}
+\setlength{\topmargin}{0cm}
+%\renewcommand{\baselinestretch}{1.2}
+%\renewcommand{\topfraction}{0.8}
+%\renewcommand{\bottomfraction}{0.6}
+%\renewcommand{\textfraction}{0.2}
+\usepackage[round]{natbib}
+\usepackage{xeCJK}
+\usepackage[round]{natbib}
+\setCJKmainfont{Noto Sans CJK SC}
+\setCJKsansfont{Noto Sans CJK SC}
+\setCJKmonofont{Noto Sans Mono CJK SC}
+% Generate PDF: xelatex -shell-escape <tex file>
+\author{jouyouyun}
+\date{\today}
+\title{ABI 结构体变动测试}
+\hypersetup{
+ pdfauthor={jouyouyun},
+ pdftitle={ABI 结构体变动测试},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 28.0.50 (Org mode 9.3)},
+ pdflang={English}}
+\begin{document}
+
+\maketitle
+\newpage
+
+\tableofcontents
+\newpage
+
+
+一个应用 \texttt{AppA} 使用了动态库 \texttt{LibA} ，此时更新 \texttt{LibA} 的结构体成员，在中间位置添加成员，需要重新编译生成 \texttt{AppA} 才能得到正确的结果。\\
+
+本文针对这个问题进行了验证，具体代码见下文。
+
+\newpage
+
+\section{代码}
+\label{sec:orgdbc04b8}
+
+\subsection{设计说明}
+\label{sec:org6304594}
+
+设计了一个动态库 \texttt{libtest} ，里面包含了一个结构体，结构体里有 \texttt{2} 个 \texttt{int} 成员，另外提供了一个创建此结构体的方法，创建结构体对每个成员指定了默认值。\\
+
+复制了上述的动态库，在结构体成员之间添加了一个新的成员，创建接口里照样指定了新成员的默认值。\\
+
+编写了一个应用，基于原始动态库进行编译，应用执行后会打印原始动态库成员的值。使用 \texttt{LD\_LIBRARY\_PATH} 指定不同的 \texttt{libtest} 路径来运行应用，输出的结果应该不一致。
+证明结构体成员变动后需要重新编译应用。\\
+
+\subsection{目录结构}
+\label{sec:org8e5d34e}
+
+\begin{minted}{shell}
+./
+├── changed
+│   ├── Makefile
+│   ├── test.c
+│   └── test.h
+├── main.c
+├── Makefile
+├── README.org
+└── origin
+    ├── Makefile
+    ├── test.c
+    └── test.h
+\end{minted}
+
+\subsection{文件说明}
+\label{sec:orgabdba85}
+
+\begin{itemize}
+\item \texttt{origin}
+
+原始的动态库的代码
+
+\item \texttt{changed}
+
+添加了成员的动态库代码
+
+\item \texttt{main.c}
+
+测试程序代码
+\end{itemize}
+
+\subsection{测试步骤}
+\label{sec:org090bef6}
+
+执行以下命令进行测试：
+
+\begin{minted}{shell}
+make build
+make run-origin
+make run-changed
+\end{minted}
+
+输出结果如下：
+\begin{minted}{shell}
+$ make build
+cd ./origin && make rebuild && cd ..
+make[1]: 进入目录“./origin”
+rm -f libtest.so
+gcc -shared -fPIC -o libtest.so test.c
+make[1]: 离开目录“./origin”
+cd ./changed && make rebuild && cd ..
+make[1]: 进入目录“./changed”
+rm -f libtest.so
+gcc -shared -fPIC -o libtest.so test.c
+make[1]: 离开目录“./changed”
+gcc -Wall -g -L./origin -ltest -o abi_test main.c
+
+$ make run-origin
+env LD_LIBRARY_PATH=./origin ./abi_test
+Test: (1, 3)
+
+$ make run-changed
+env LD_LIBRARY_PATH=./changed ./abi_test
+Test: (1, 2)
+\end{minted}
+
+\newpage
+
+\subsection{代码内容}
+\label{sec:orgbc96ad9}
+
+\subsubsection{origin}
+\label{sec:org923fa06}
+
+\begin{itemize}
+\item \texttt{test.h}
+\end{itemize}
+
+\begin{minted}{c}
+#ifndef __TEST_API_H__
+#define __TEST_API_H__
+
+struct test_p {
+    int a;
+    int b;
+};
+
+struct test_p *create_test(void);
+
+#endif
+\end{minted}
+
+
+\begin{itemize}
+\item \texttt{test.c}
+\end{itemize}
+
+\begin{minted}{c}
+#include "test.h"
+
+#include <stdlib.h>
+
+struct test_p*
+create_test(void)
+{
+    struct test_p *p = calloc(1, sizeof(struct test_p));
+    if (!p)
+        return NULL;
+
+    p->a = 1;
+    p->b = 3;
+
+    return p;
+}
+\end{minted}
+
+\begin{itemize}
+\item \texttt{Makefile}
+\end{itemize}
+
+\begin{minted}{makefile}
+CC = gcc
+TARGET = libtest.so
+SRC := test.c
+
+build:
+    ${CC} -shared -fPIC -o ${TARGET} ${SRC}
+
+clean:
+    rm -f ${TARGET}
+
+rebuild: clean build
+\end{minted}
+
+\newpage
+
+\subsubsection{changed}
+\label{sec:orgb3afe66}
+
+这里只给出相对 \texttt{origin} 变动的代码：
+
+\begin{itemize}
+\item \texttt{test.h}
+\end{itemize}
+
+\begin{minted}{diff}
+$ diff origin/test.h changed/test.h
+5a6
+>     int aa;
+\end{minted}
+
+\begin{itemize}
+\item \texttt{test.c}
+\end{itemize}
+
+\begin{minted}{diff}
+$ diff origin/test.c changed/test.c
+12a13
+>     p->aa = 2;
+\end{minted}
+
+\newpage
+
+\subsubsection{app}
+\label{sec:org08c21e4}
+
+\begin{itemize}
+\item \texttt{main.c}
+\end{itemize}
+
+\begin{minted}{c}
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "./origin/test.h"
+
+int
+main(int argc, char *argv[])
+{
+    if (argc > 1) {
+        printf("Usage: %s", argv[0]);
+        return -1;
+    }
+
+    struct test_p *p = create_test();
+    if (!p) {
+        printf("Failed to create test\n");
+        return -2;
+    }
+
+    printf("Test: (%d, %d)\n", p->a, p->b);
+    free(p);
+
+    return 0;
+}
+\end{minted}
+
+\begin{itemize}
+\item \texttt{Makefile}
+\end{itemize}
+
+\begin{minted}{makefile}
+CC = gcc
+TARGET = abi_test
+ORIGIN = ./origin
+CHANGED = ./changed
+
+build :
+    cd ${ORIGIN} && make rebuild && cd ..
+    cd ${CHANGED} && make rebuild && cd ..
+    gcc -Wall -g -L${ORIGIN} -ltest -o ${TARGET} main.c
+
+run-origin:
+    env LD_LIBRARY_PATH=${ORIGIN} ./${TARGET}
+
+run-changed:
+    env LD_LIBRARY_PATH=${CHANGED} ./${TARGET}
+
+clean:
+    cd ${ORIGIN} && make clean && cd ..
+    cd ${CHANGED} && make clean && cd ..
+    rm -f ${TARGET}
+
+rebuild: clean build
+\end{minted}
+\end{document}
