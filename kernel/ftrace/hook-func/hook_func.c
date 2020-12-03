@@ -4,6 +4,9 @@
 #include <linux/version.h>
 #include <linux/ftrace.h>
 #include <linux/kallsyms.h>
+#include <linux/security.h>
+
+#define MODULE_NAME "hook_func"
 
 struct ftrace_hook {
 	const char *name;
@@ -31,9 +34,9 @@ static int hook_mmap_file(struct file *file, unsigned long prot,
 {
 	int ret;
 
-	pr_info("[mmap_file] hook start\n");
+	pr_info("<%s> [mmap_file] hook start\n", MODULE_NAME);
 	ret = real_mmap_file(file, prot, flags);
-	pr_info("[mmap_file] hook done, ret: %d\n", ret);
+	pr_info("<%s> [mmap_file] hook done, ret: %d\n", MODULE_NAME, ret);
 
 	return ret;
 }
@@ -47,7 +50,7 @@ static int resolve_hook_addr(struct ftrace_hook *hook)
 {
 	hook->address = kallsyms_lookup_name(hook->name);
 	if (!hook->address) {
-		pr_err("[resolve addr] failed for: %s\n", hook->name);
+		pr_err("<%s> [resolve addr] failed for: %s\n", MODULE_NAME, hook->name);
 		return -ENOENT;
 	}
 
@@ -58,21 +61,21 @@ static int resolve_hook_addr(struct ftrace_hook *hook)
 static void notrace mmap_file_cb(unsigned long ip, unsigned long parent_ip,
                                  struct ftrace_ops *ops, struct pt_regs *regs)
 {
-	pr_info("[mmap_file] start, ip: 0x%lx, parent_ip: 0x%lx\n", ip, parent_ip);
+	pr_info("<%s> [mmap_file] start, ip: 0x%lx, parent_ip: 0x%lx\n", MODULE_NAME, ip, parent_ip);
 	if (!regs) {
-		pr_info("[%s] invalid regs\n", __func__);
+		pr_info("<%s> [%s] invalid regs\n", MODULE_NAME, __func__);
 		return ;
 	}
 	struct ftrace_hook *hook = container_of(ops, struct ftrace_hook, ops);
 
 	if (!within_module(parent_ip, THIS_MODULE)) {
-		pr_info("[mmap_file_cb:] %s not module\n", hook->name);
+		pr_info("<%s> [mmap_file_cb:] %s not module\n", MODULE_NAME, hook->name);
 #ifdef CONFIG_ARM64
-		pr_info("[mmap_file_cb] ------------ ARM64 ---------\n");
+		pr_info("<%s> [mmap_file_cb] ------------ ARM64 ---------\n", MODULE_NAME);
 		if (hook)
 			regs->pc = (unsigned long)hook->function;
 #else
-		pr_info("[mmap_file_cb] ------------ NORMAL ---------\n");
+		pr_info("<%s> [mmap_file_cb] ------------ NORMAL ---------\n", MODULE_NAME);
 		if (hook)
 			regs->ip = (unsigned long)hook->function;
 #endif

@@ -2,6 +2,7 @@
 #include <linux/module.h>
 #include <linux/kprobes.h>
 
+#define MODULE_NAME "kprobe"
 #define MAX_SYMBOL_LEN    64
 static char symbol[MAX_SYMBOL_LEN] = "security_mmap_file";
 module_param_string(symbol, symbol, sizeof(symbol), 0644);
@@ -15,13 +16,12 @@ static struct kprobe kp = {
 static int handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
 #ifdef CONFIG_X86
-    pr_info("<%s> pre_handler: p->addr = %pF, ip = %lx, flags = 0x%lx\n",
-        p->symbol_name, p->addr, regs->ip, regs->flags);
+    pr_info("[%s] <%s> pre_handler: p->addr = %pF, ip = %lx, flags = 0x%lx\n",
+        MODULE_NAME, p->symbol_name, p->addr, regs->ip, regs->flags);
 #endif
 #ifdef CONFIG_ARM64
-    pr_info("<%s> pre_handler: p->addr = %pF, pc = 0x%lx,"
-            " pstate = 0x%lx\n",
-        p->symbol_name, p->addr, (long)regs->pc, (long)regs->pstate);
+    pr_info("[%s] <%s> pre_handler: p->addr = %pF, pc = 0x%lx, pstate = 0x%lx\n",
+        MODULE_NAME, p->symbol_name, p->addr, (long)regs->pc, (long)regs->pstate);
 #endif
 
     /* A dump_stack() here will give a stack backtrace */
@@ -33,12 +33,12 @@ static void handler_post(struct kprobe *p, struct pt_regs *regs,
                 unsigned long flags)
 {
 #ifdef CONFIG_X86
-    pr_info("<%s> post_handler: p->addr = %pF, flags = 0x%lx\n",
-        p->symbol_name, p->addr, regs->flags);
+    pr_info("[%s] <%s> post_handler: p->addr = %pF, flags = 0x%lx\n",
+        MODULE_NAME, p->symbol_name, p->addr, regs->flags);
 #endif
 #ifdef CONFIG_ARM64
-    pr_info("<%s> post_handler: p->addr = %pF, pstate = 0x%lx\n",
-        p->symbol_name, p->addr, (long)regs->pstate);
+    pr_info("[%s] <%s> post_handler: p->addr = %pF, pstate = 0x%lx\n",
+        MODULE_NAME, p->symbol_name, p->addr, (long)regs->pstate);
 #endif
 }
 
@@ -49,7 +49,7 @@ static void handler_post(struct kprobe *p, struct pt_regs *regs,
  */
 static int handler_fault(struct kprobe *p, struct pt_regs *regs, int trapnr)
 {
-    pr_info("fault_handler: p->addr = %pF, trap #%dn", p->addr, trapnr);
+    pr_info("[%s] fault_handler: p->addr = %pF, trap #%dn", MODULE_NAME, p->addr, trapnr);
     /* Return 0 because we don't handle the fault. */
     return 0;
 }
@@ -63,17 +63,17 @@ static int __init kprobe_init(void)
 
     ret = register_kprobe(&kp);
     if (ret < 0) {
-        pr_err("register_kprobe failed, returned %d\n", ret);
+        pr_err("[%s] register_kprobe failed, returned %d\n", MODULE_NAME, ret);
         return ret;
     }
-    pr_info("Planted kprobe at %pF\n", kp.addr);
+    pr_info("[%s] Planted kprobe at %pF\n", MODULE_NAME, kp.addr);
     return 0;
 }
 
 static void __exit kprobe_exit(void)
 {
     unregister_kprobe(&kp);
-    pr_info("kprobe at %pF unregistered\n", kp.addr);
+    pr_info("[%s] kprobe at %pF unregistered\n", MODULE_NAME, kp.addr);
 }
 
 module_init(kprobe_init)
