@@ -1,0 +1,84 @@
+# % Options Settings: https://orgmode.org/manual/Export-Settings.html
+#+OPTIONS: timestamp:nil ^:nil <:nil p:t prop:t tags:t tasks:t todo:t
+#+LATEX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [a4paper,12pt]
+#+LATEX_HEADER: \usepackage{booktabs}
+# % to include pdf/eps/png files
+#+LATEX_HEADER: \usepackage{indentfirst}
+#+LATEX_HEADER: \usepackage{graphicx}
+# % useful to add 'todo' markers
+#+LaTeX_HEADER: \usepackage{todonotes}
+# % hyperrefs
+#+LaTeX_HEADER: \usepackage{hyperref}
+# % ----------------- Code blocks ----------------
+# % Dependencies: pip install pygments
+# % nice source code formatting
+#+LaTeX_HEADER: \usepackage[utf8]{inputenc}
+#+LaTeX_HEADER: \usepackage{xcolor}
+#+LaTeX_HEADER: \definecolor{bg}{rgb}{0.98,0.98,0.98}
+#+LaTeX_HEADER: \usepackage{minted}
+#+LaTeX_HEADER: \setminted{
+#+LaTeX_HEADER:   mathescape,
+#+LaTeX_HEADER:   linenos,
+#+LaTeX_HEADER:   numbersep=5pt,
+#+LaTeX_HEADER:   frame=lines,
+#+LaTeX_HEADER:   framesep=2mm,
+#+LaTeX_HEADER:   autogobble,
+#+LaTeX_HEADER:   style=tango,
+#+LaTeX_HEADER:   bgcolor=bg
+#+LaTeX_HEADER: }
+# % ----------------- Code blocks ----------------
+# % change style of section headings
+#+LaTeX_HEADER: \usepackage{sectsty}
+#+LaTeX_HEADER: \allsectionsfont{\sffamily}
+# % only required for orgmode ticked TODO items, can remove
+#+LaTeX_HEADER: \usepackage{amssymb}
+# % only required for underlining text
+#+LaTeX_HEADER: \usepackage[normalem]{ulem}
+# % often use this in differential operators:
+#+LaTeX_HEADER: \renewcommand{\d}{\ensuremath{\mathrm{d}}}
+# % allow more reasonable text width for most documents than LaTeX default
+#+LaTeX_HEADER: \setlength{\textheight}{21cm}
+#+LaTeX_HEADER: \setlength{\textwidth}{16cm}
+# % reduce left and right margins accordingly
+#+LaTeX_HEADER: \setlength{\evensidemargin}{-0cm}
+#+LaTeX_HEADER: \setlength{\oddsidemargin}{-0cm}
+# % reduce top margin
+#+LaTeX_HEADER: \setlength{\topmargin}{0cm}
+# % Increase default line spacing a little if desired
+#+LaTeX_HEADER: %\renewcommand{\baselinestretch}{1.2}
+# % tailored float handling
+#+LaTeX_HEADER: %\renewcommand{\topfraction}{0.8}
+#+LaTeX_HEADER: %\renewcommand{\bottomfraction}{0.6}
+#+LaTeX_HEADER: %\renewcommand{\textfraction}{0.2}
+# % references formats
+#+LaTeX_HEADER: \usepackage[round]{natbib}
+# % Chinese supported
+#+LATEX_HEADER: \usepackage{xeCJK}
+# % references formats
+#+LATEX_HEADER: \usepackage[round]{natbib}
+#+LATEX_HEADER: \setCJKmainfont{Noto Serif CJK SC}
+#+LATEX_HEADER: \setCJKsansfont{Noto Sans CJK SC}
+#+LATEX_HEADER: \setCJKmonofont{Noto Sans Mono CJK SC}
+# % End of Chinese supported
+# % Line & paragraph space
+#+LATEX_HEADER: \usepackage{setspace}
+#+LATEX_HEADER: \renewcommand{\baselinestretch}{1.5}
+#+LATEX_HEADER: \setlength{\parskip}{0.8em}
+# % Line & paragraph space end
+# % Breaking Page Between Title and Toc
+#+LATEX_HEADER: \makeatletter \def\@maketitle{\null \begin{center} {\vskip 5em \Huge \@title} \vskip 30em {\LARGE \@author} \vskip 3em {\LARGE \@date} \end{center} \newpage} \makeatother
+# % End of Breaking Page Between Title and Toc
+#+LATEX_HEADER: \usepackage{tikz}
+#+LATEX_HEADER: \renewcommand\contentsname{目录}
+# Generate Tex File: C-c C-e l l; then replace verbatim with minted, and must special the code language
+#+LATEX_HEADER: % Generate PDF: xelatex -shell-escape <tex file>
+#+AUTHOR: jouyouyun
+#+EMAIL: yanbowen717@gmail.com
+#+TITLE: 测试读文件
+
+** 背景
+
+在 =kernel 5.10= 以后， =set_fs/get_fs= 被移除了，之前的读文件方式不可用了，需要对代码进行修改
+
+于是写了个 =demo= 来进行测试，相见： [[./read_demo.c][read_demo]]
