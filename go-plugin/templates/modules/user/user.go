@@ -30,19 +30,25 @@ func (m *Manager) Parameters() ([]byte, error) {
 	return json.Marshal(&info)
 }
 
-func (m *Manager) Start(params []byte) error {
+func (m *Manager) Start(params []byte) (templates.Templates, error) {
+	println("Params:", string(params))
 	var info Manager
 
 	err := json.Unmarshal(params, &info)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = info.connectDB()
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return info.run()
+	err = info.run()
+	if err != nil {
+		return nil, err
+	}
+
+	return &info, nil
 }
 
 func (m *Manager) Stop() error {

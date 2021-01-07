@@ -70,11 +70,12 @@ func StartModule(uuid string) error {
 	var temp Templates
 	// get obj by load plugin
 
-	err := temp.Start(params)
+	instance, err := temp.Start(params)
 	if err != nil {
 		return err
 	}
-	runModSet[uuid] = temp
+	runModSet[uuid] = instance
+	return nil
 }
 
 func StopModule(uuid string) error {
@@ -88,6 +89,7 @@ func StopModule(uuid string) error {
 		return err
 	}
 	delete(runModSet, uuid)
+	return nil
 }
 
 func (info *ModuleInfo) Save(filename string) error {
@@ -106,19 +108,19 @@ func loadPlugin(filename string) (*ModuleInfo, error) {
 		return nil, err
 	}
 
-	temp, ok := obj.(Templates)
+	temp, ok := obj.(*Templates)
 	if !ok {
 		return nil, errInvalidObject
 	}
 
-	params, err := temp.Parameters()
+	params, err := (*temp).Parameters()
 	if err != nil {
 		return nil, err
 	}
 
 	return &ModuleInfo{
-		Name:        temp.Name(),
-		Description: temp.Description(),
+		Name:        (*temp).Name(),
+		Description: (*temp).Description(),
 		Params:      params,
 	}, nil
 }

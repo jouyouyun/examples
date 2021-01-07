@@ -4,7 +4,7 @@ type Templates interface {
 	Name() string
 	Description() string
 	Parameters() ([]byte, error)
-	Start(params []byte) error
+	Start(params []byte) (Templates, error)
 	Stop() error
 }
 
