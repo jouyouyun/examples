@@ -55,8 +55,9 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	detach_device(argv[1], argv[2]);
-	libusb_exit(ctx);
+        libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_DEBUG);
+        detach_device(argv[1], argv[2]);
+        libusb_exit(ctx);
 
 	return 0;
 }
