@@ -42,6 +42,57 @@ static void detach_device(const char *vendor, const char *product)
 	libusb_close(handler);
 }
 
+// Some USB devices of the same model may have the same vendor id and product id.
+static void detach_device2(const char *vendor, const char *product)
+{
+	int i = 0;
+	int ret = 0;
+	long int vid = 0, pid = 0;
+	struct libusb_device **devs = NULL;
+	struct libusb_device *dev = NULL;
+	struct libusb_device_handle *handler = NULL;
+
+        vid = strtol(vendor, NULL, 16);
+        pid = strtol(product, NULL, 16);
+
+        printf("will detach device %lx:%lx\n", vid, pid);
+	if ((ret = libusb_get_device_list(ctx, &devs)) < 0) {
+          fprintf(stderr, "failed to get device list: %s\n", libusb_strerror(ret));
+          return;
+	}
+
+	while ((dev = devs[i++]) != NULL) {
+		struct libusb_device_descriptor desc;
+		ret = libusb_get_device_descriptor(dev, &desc);
+		if (ret < 0) {
+                  fprintf(stderr, "failed to get device descriptor: %s\n", libusb_strerror(ret));
+		  goto out;
+                }
+
+		if (desc.idVendor != vid || desc.idProduct != pid) {
+			continue;
+		}
+
+		printf("found, detach device:\n");
+		ret = libusb_open(dev, &handler);
+		if (ret < 0) {
+			fprintf(stderr, "failed to open device: %s\n", libusb_strerror(ret));
+			continue;
+		}
+
+		ret = libusb_detach_kernel_driver(handler, 0);
+                if (ret < 0) {
+			fprintf(stderr, "failed to detach device: %s\n", libusb_strerror(ret));
+                }
+                libusb_close(handler);
+                handler = NULL;
+	}
+
+ out:
+	libusb_free_device_list(devs, 1);
+	return ;
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc != 3) {
@@ -56,8 +107,9 @@ int main(int argc, char *argv[])
 	}
 
         libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_DEBUG);
-        detach_device(argv[1], argv[2]);
+        //detach_device(argv[1], argv[2]);
+        detach_device2(argv[1], argv[2]);
         libusb_exit(ctx);
 
-	return 0;
+        return 0;
 }
