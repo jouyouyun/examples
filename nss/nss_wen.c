@@ -31,7 +31,7 @@ unsigned int g_idx = 1;
 		result->pw_name = ptr;					\
 		ptr += strlen(info.user) + 1;				\
 		memcpy(ptr, info.home, strlen(info.home));		\
-		result->pw_dir = info.home;				\
+		result->pw_dir = ptr;				\
 		ptr += strlen(info.home) + 1;				\
 		memcpy(ptr, info.shell, strlen(info.shell));		\
 		result->pw_shell = ptr;					\
@@ -71,7 +71,7 @@ unsigned int g_idx = 1;
 		result->sp_namp = ptr;					\
 		ptr += strlen(info.user) + 1;				\
 		memcpy(ptr, info.passwd, strlen(info.passwd));		\
-		result->sp_pwdp = info.passwd;				\
+		result->sp_pwdp = ptr;				\
 		ptr += strlen(info.passwd) + 1;				\
 		result->sp_max = 99999;					\
 		result->sp_warn = 7;					\

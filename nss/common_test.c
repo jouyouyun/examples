@@ -18,7 +18,7 @@ static void test_passwd_query()
 	int i = 0;
 	int ret = 0;
 	passwd_info info;
-	char *names[] = {"test1", "test2", NULL};
+	char *names[] = {"wtest1", "wtest2", NULL};
 	unsigned int ids[] = {5000, 5001, 0};
 	unsigned int idx_list[] = {1, 2, 0};
 
@@ -53,7 +53,7 @@ static void test_group_query() {
 	int i = 0;
 	int ret = 0;
 	group_info info;
-	char *names[] = {"test1", "test2", NULL};
+	char *names[] = {"wtest1", "wtest2", NULL};
 	unsigned int ids[] = {5000, 5001, 0};
         unsigned int idx_list[] = {1, 2, 0};
 
@@ -106,7 +106,7 @@ static void test_shadow_query() {
 	int i = 0;
 	int ret = 0;
 	shadow_info info;
-	char *names[] = {"test1", "test2", NULL};
+	char *names[] = {"wtest1", "wtest2", NULL};
         unsigned int idx_list[] = {1, 2, 0};
 
         for (; names[i] != NULL; i++) {

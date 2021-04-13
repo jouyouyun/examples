@@ -40,7 +40,4 @@ auth	[success=6 default=ignore]	pam_wen.so
 
 ** TODO
 
-+ [ ] Fix some program crash, such as
-  - =polkit-1-dde=
-+ [x] Fill user =$HOME=
-+ [ ] Writing '.Xauthority' failed, home got failure
++ [ ] Fill group members
