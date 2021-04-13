@@ -1,0 +1,45 @@
+* NSS & PAM Module Demo
+
+** Dependencies
+
++ libsystemd-dev
++ libpam0g-dev
+
+** Build
+
+=make=
+
+** Installation
+
+=sudo make install=
+
+*Note:* Only test in x86.
+
+** Configuration
+
+*** NSS
+
+Edit =/etc/nsswitch.conf= , add nss module 'wen', such as:
+
+#+begin_src shell
+passwd:         files systemd wen
+group:          files systemd wen
+#+end_src
+
+*** PAM
+
+Edit =/etc/pam.d/deepin-auth-keyboard= , add pam module 'wen' at the first line, such as:
+
+#+begin_src shell
+auth	[success=6 default=ignore]	pam_wen.so
+#+end_src
+
+** Uninstall
+
+=make uninstall=
+
+** TODO
+
++ [ ] Fix some program crash, such as
+  - =polkit-1-dde=
++ [ ] Fill user =$HOME=

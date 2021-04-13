@@ -13,4 +13,14 @@ pam:
 clean:
 	rm -f ${NSS_WEN} ${PAM_WEN}
 
+install:
+	cp ${NSS_WEN} /lib/`uname -m`-linux-gnu/
+	cp ${PAM_WEN} /lib/`uname -m`-linux-gnu/security/
+	cp -rf ./testdata /etc/wen
+
+uninstall:
+	rm -rf /etc/wen
+	rm -f /lib/`uname -m`-linux-gnu/${NSS_WEN}
+	rm -f /lib/`uname -m`-linux-gnu/security/${PAM_WEN}
+
 rebuild: clean build
