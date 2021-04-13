@@ -151,6 +151,7 @@ static int do_query(const char *name, unsigned int id, unsigned int idx,
 	}
 
 	do {
+		ret = -1;
 		memset(line, 0, MAX_PASSWD_LEN);
 		if (fgets(line, MAX_PASSWD_LEN, fr) == NULL) {
 			ret = errno;
@@ -176,7 +177,7 @@ static int do_query(const char *name, unsigned int id, unsigned int idx,
 			ret = do_query_by_idx(ty, (const char **)strv, info);
 			found = 1;
 		}
-		
+
 		i++;
 		free(strv);
                 if (found == 1 && ret == 0)
