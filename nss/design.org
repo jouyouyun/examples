@@ -1,0 +1,38 @@
+** Socket Data Design
+
+=socket= 主要用来与 =nss= 模块进行交互，数据结构需要支持 =passwd= 和 =group= 的信息，这两者的结构分别如下(简化版)：
+
++ =passwd=
+  - =name:uid:gid:home:shell=
++ =group=
+  - =name:gid:members=
+
+数据以 =char[]= 类型进行传输，字段之间以 =:= 进行分割，结构如下：
+
+| name    | type   | descrition | range |
+| version | char[] | 版本       | 0-999 |
+| code    | uint32 | 状态码     | 0-999 |
+| type    | uint32 | 请求类型   |  0-99 |
+| data    | char[] | 具体数据   |     * |
+
+=code= 不为 =0= 时，表示错误，这时 =data= 里就表示错误信息。数据如下：
+
++ =passwd=
+  - ="001:0:1:test1:5000:5000:/home/test1:/bin/bash"=
++ =group=
+  - ="001:0:2:test1:5000:17,109"=
+
+失败时，状态码为对应的错误码，其后的数据为错误详情，如：
+
++ ="001:1:1:not found"=
+
+数据结构设计如下：
+
+#+begin_src c
+typedef struct _message_info {
+    char version[4];
+    unsigned int code;
+    unsigned int type;
+    char *data;
+} message_info;
+#+end_src

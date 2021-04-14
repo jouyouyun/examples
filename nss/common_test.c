@@ -5,6 +5,7 @@
 #include <assert.h>
 
 #include "common.h"
+#include "message.h"
 
 #undef PASSWD_FILE
 #define PASSWD_FILE "./testdata/passwd"
@@ -125,11 +126,41 @@ static void test_shadow_query() {
         }
 }
 
+static void test_message()
+{
+	int ret = 0;
+	char data[] = "001:0:1:test1:5000:5000:/home/test1:/bin/shell";
+        response_info info = {
+            .version = "001",
+            .code = 0,
+            .type = 1,
+            .data = "test1:5000:5000:/home/test1:/bin/shell"
+        };
+
+	int len = 0;
+	char *msg = NULL;
+	ret = marshal_message(&info, &msg, &len);
+        assert(ret == 0);
+        assert(strcmp(msg, data) == 0);
+	free(msg);
+	
+	response_info tmp;
+	ret = unmarshal_message(data, &tmp);
+        assert(ret == 0);
+	assert(strcmp(tmp.version, info.version) == 0);
+	assert(tmp.code == info.code);
+	assert(tmp.type == info.type);
+	assert(strcmp(tmp.data, info.data) == 0);
+	free(tmp.data);
+}
+
 int main()
 {
 	test_passwd_query();
 	test_group_query();
 	test_shadow_query();
 
+	test_message();
+	
 	return 0;
 }

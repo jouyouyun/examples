@@ -6,6 +6,23 @@
 
 #include "common.h"
 
+#define make_from_data(_info_ty, _func, _make)				\
+	_info_ty *make_##_func##_from_data(char *data) {		\
+		int size = 0;						\
+		char *tmp = NULL;					\
+		char **strv = NULL;					\
+		_info_ty *info = NULL;					\
+		tmp = data;						\
+		strv = split(tmp, ":", &size);				\
+		if (!strv) {						\
+			WEN_INFO("invalid data format: %s", data);	\
+			return NULL;					\
+		}							\
+		info = (_info_ty *)calloc(1, sizeof(_info_ty));		\
+		_make;							\
+		return info;						\
+	}
+
 #define FILEPATH(_ty, _path) {					\
 		switch (_ty) {					\
 		case TY_PASSWD: _path = PASSWD_FILE; break;	\
@@ -58,7 +75,7 @@
 		memcpy(shadow->passwd, _strv[1], MAX_PASSWD_LEN - 1);	\
 	}
 
-static char **split(const char *str, const char *delim, int *size)
+char **split(const char *str, const char *delim, int *size)
 {
 	int i = 0;
 	char **strv = NULL;
@@ -216,3 +233,6 @@ void free_group_list(char **list)
         }
         free(list);
 }
+
+make_from_data(passwd_info, passwd, make_passwd_info(strv, info));
+make_from_data(group_info, group, make_group_info(strv, info));

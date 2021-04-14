@@ -12,7 +12,7 @@ pam:
 	gcc -Wall -g -fPIC -shared -o ${PAM_WEN}  pam_wen.c common.c ${FLAGS}
 
 test:
-	gcc -Wall -g -o ${TEST_COMM} common_test.c common.c ${FLAGS}
+	gcc -Wall -g -o ${TEST_COMM} common_test.c common.c message.c ${FLAGS}
 
 clean:
 	rm -f ${NSS_WEN} ${PAM_WEN} ${TEST_COMM}

@@ -42,4 +42,7 @@ int query_by_idx(const unsigned int idx, const enum FILE_TYPE ty, void *info);
 
 void free_group_list(char **list);
 
+passwd_info *make_passwd_from_data(char *data);
+group_info *make_group_from_data(char *data);
+
 #define WEN_INFO(fmt, ...) sd_journal_print(LOG_INFO, fmt, ##__VA_ARGS__)
