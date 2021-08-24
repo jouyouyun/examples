@@ -93,6 +93,51 @@ static void detach_device2(const char *vendor, const char *product)
 	return ;
 }
 
+#define DESC_MAX_BUF 256
+
+static void list_device()
+{
+  int i = 0;
+  int ret = 0;
+  unsigned char buf[DESC_MAX_BUF];
+  struct libusb_device **devs = NULL;
+  struct libusb_device *dev = NULL;
+  struct libusb_device_handle *handler = NULL;
+
+  printf("usb device list\n");
+  if ((ret = libusb_get_device_list(ctx, &devs)) < 0) {
+    fprintf(stderr, "failed to get device list: %s\n", libusb_strerror(ret));
+    return;
+  }
+
+  while ((dev = devs[i++]) != NULL) {
+    struct libusb_device_descriptor desc;
+    ret = libusb_get_device_descriptor(dev, &desc);
+    if (ret < 0) {
+      fprintf(stderr, "failed to get device descriptor: %s\n",
+              libusb_strerror(ret));
+      goto out;
+    }
+
+    ret = libusb_open(dev, &handler);
+    if (ret < 0) {
+      fprintf(stderr, "failed to open device: %s\n", libusb_strerror(ret));
+      continue;
+    }
+
+    printf("0x%x:0x%x\n", desc.idVendor, desc.idProduct);
+    libusb_get_string_descriptor_ascii(handler, ${2 : uint8_t desc_index}, buf,
+                                       DESC_MAX_BUF);
+    libusb_close(handler);
+    handler = NULL;
+  }
+
+out:
+  libusb_free_device_list(devs, 1);
+  return;
+  printf("end usb device list\n");
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc != 3) {
