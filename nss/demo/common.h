@@ -29,6 +29,7 @@ typedef struct _group_info_ {
 	char group[MAX_NAME_LEN];
 	unsigned int gid;
 	char **group_list; // termiante by NULL
+	unsigned int mem_len;
 } group_info;
 
 typedef struct _shadow_info_ {

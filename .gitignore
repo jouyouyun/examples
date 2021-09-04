@@ -10,3 +10,5 @@ node_modules
 /vue/*/package-lock.json
 
 .ccls-cache
+.cache
+compile_commands.json

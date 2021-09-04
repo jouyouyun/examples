@@ -52,6 +52,7 @@ unsigned int g_idx = 1;
 		memcpy(ptr, info.group, strlen(info.group));		\
 		result->gr_name = ptr;					\
 		ptr += strlen(info.group) + 1;				\
+		// TODO(jouyouyun): impl group passwd
 		memcpy(ptr, "x", 1);					\
 		result->gr_passwd = ptr;				\
 		ptr += 1;						\
