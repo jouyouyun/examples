@@ -18,7 +18,9 @@ import (
 var (
 	action = flag.String("action", "", "avaliable action: sign、verify")
 	dir    = flag.String("dir", "", "the directory path")
+	pkg    = flag.String("pkg", "", "the package name")
 	file   = flag.String("file", "", "the file path")
+	prefix = flag.String("prefix", "", "the file path prefix in verify")
 	output = flag.String("output", "", "the output directory")
 )
 
@@ -36,7 +38,7 @@ func main() {
 	}
 
 sign:
-	if (len(*dir) == 0 || len(*file) == 0) && len(*output) == 0 {
+	if ((len(*dir) == 0 || len(*pkg) == 0) || len(*file) == 0) && len(*output) == 0 {
 		flag.Usage()
 		os.Exit(-1)
 	}
@@ -63,7 +65,7 @@ verify:
 		os.Exit(-1)
 	}
 
-	verified, err := verifyFile(*file, *output)
+	verified, err := verifyFile(*file, *prefix, *output)
 	if err != nil {
 		fmt.Println("Failed to verify:", err)
 		os.Exit(-11)
@@ -73,21 +75,22 @@ verify:
 
 func signFile(srcFile, fpath, hashDir string) error {
 	fmt.Println("Will signature:", srcFile, fpath)
-	signature, err := signer.SignFileWithFragment(srcFile)
+	signature, err := signer.SignFileByFragment(srcFile)
 	if err != nil {
 		return err
 	}
 	return writeSignature(signature, fpath, hashDir)
 }
 
-func verifyFile(fpath string, hashDir string) (bool, error) {
-	signature, err := signer.SignFileWithFragment(fpath)
+func verifyFile(fpath, prefixDir string, hashDir string) (bool, error) {
+	signature, err := signer.SignFileByFragment(fpath)
 	if err != nil {
 		return false, err
 	}
 
-	hashFile := filepath.Join(*output, fmt.Sprintf("%x", sha256.Sum256([]byte(fpath))))
-	data, err := ioutil.ReadFile(hashFile)
+	hashFile := filepath.Join(*output, fmt.Sprintf("%x",
+		sha256.Sum256([]byte(filepath.Join("/", strings.TrimPrefix(fpath, prefixDir))))))
+	data, err := ioutil.ReadFile(hashFile + ".sign")
 	if err != nil {
 		return false, err
 	}
@@ -96,20 +99,39 @@ func verifyFile(fpath string, hashDir string) (bool, error) {
 }
 
 func walkDir(fpath string, info fs.FileInfo, err error) error {
-	if !info.Mode().Perm().IsRegular() {
+	if !info.Mode().IsRegular() {
 		return nil
 	}
 
-	if !filetype.IsExecutableFile(fpath) {
+	if (info.Mode().Perm()&0111 == 0) && !filetype.IsExecutableFile(fpath) {
 		return nil
 	}
 	return signFile(fpath,
-		filepath.Join("/", strings.TrimLeft(fpath, *dir)), *output)
+		filepath.Join("/", correctFilepath(fpath, *dir, *pkg)), *output)
 }
 
 func writeSignature(signature []byte, fpath, hashDir string) error {
 	_ = os.MkdirAll(*output, 0755)
 	name := fmt.Sprintf("%x", sha256.Sum256([]byte(fpath)))
 	fmt.Println("\tFile hash name:", name)
-	return ioutil.WriteFile(filepath.Join(hashDir, name), signature, 0644)
+	return ioutil.WriteFile(filepath.Join(hashDir, name+".sign"), signature, 0644)
+}
+
+func correctFilepath(srcFile, prefixDir, pkgName string) string {
+	var fixList = []struct {
+		prefix string
+		target string
+	}{{
+		prefix: "/DEBIAN/",
+		target: "/var/lib/dpkg/info",
+	}}
+	fpath := strings.TrimPrefix(srcFile, prefixDir)
+	for i := 0; i < len(fixList); i++ {
+		if strings.HasPrefix(fpath, fixList[i].prefix) {
+			fpath = strings.Replace(fpath, fixList[i].prefix,
+				filepath.Join(fixList[i].target, pkgName+"."), 1)
+			break
+		}
+	}
+	return fpath
 }

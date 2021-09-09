@@ -30,7 +30,7 @@ func SignFile(filename string) ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
-func SignFileWithFragment(filename string) ([]byte, error) {
+func SignFileByFragment(filename string) ([]byte, error) {
 	list, err := calcFragmentHash(filename)
 	if err != nil {
 		return nil, err

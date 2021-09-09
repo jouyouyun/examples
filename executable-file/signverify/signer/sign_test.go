@@ -2,8 +2,8 @@ package signer
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
+	"os/exec"
 	"testing"
 	"time"
 )
@@ -18,16 +18,11 @@ func testPrepare() {
 	}
 
 	for i := 0; i < len(countList); i++ {
-		fw, err := os.OpenFile(fmt.Sprintf("testdata/%dM", countList[i]), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+		err := genTestFile(countList[i], "testdata")
 		if err != nil {
-			fmt.Println("Failed to open file:", countList[i], err)
+			fmt.Println("Failed to generate file:", countList[i], err)
 			os.Exit(-1)
 		}
-
-		for j := 0; j < countList[i]; j++ {
-			fw.Write(make1MData())
-		}
-		fw.Close()
 	}
 }
 
@@ -62,13 +57,13 @@ func TestSignFile(t *testing.T) {
 			fmt.Printf("\tSignFile:\t%s, \t%s, \tduration: %v\n", filename, string(data), duration)
 
 			prev = time.Now()
-			data, err = SignFileWithFragment(filename)
+			data, err = SignFileByFragment(filename)
 			duration = time.Now().Sub(prev)
 			averageFragment[i] += duration
 			if err != nil {
-				fmt.Println("\tTest failed for SignFileWithFragment:", filename, err)
+				fmt.Println("\tTest failed for SignFileByFragment:", filename, err)
 			}
-			fmt.Printf("\tSignFileWithFragment:\t%s, \t%s, duration: %v\n", filename, string(data), duration)
+			fmt.Printf("\tSignFileByFragment:\t%s, \t%s, duration: %v\n", filename, string(data), duration)
 		}
 	}
 
@@ -77,17 +72,11 @@ func TestSignFile(t *testing.T) {
 	}
 }
 
-func make1MData() []byte {
-	var size = 1024 * 1024
-	var str = []byte("0123456789~!@#$%^&*()-=_+qwertyuiopasdfghjklmnbvcxz[];',./<>?:{}")
-	var strLen = len(str)
-	var data = make([]byte, size)
-
-	rand.Seed(time.Now().Unix())
-	for i := 0; i < size; i++ {
-		idx := rand.Intn(strLen)
-		data[i] = str[idx]
+func genTestFile(count int, dir string) error {
+	outs, err := exec.Command("dd", "if=/dev/urandom",
+		fmt.Sprintf("of=%s/%dM", dir, count), fmt.Sprintf("count=%d", count), "bs=1M").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s: %s", err, string(outs))
 	}
-
-	return data
+	return nil
 }
