@@ -38,10 +38,10 @@ func TestSignFile(t *testing.T) {
 	defer testFinalized()
 
 	var (
-		total           = 10
-		size            = len(countList)
-		average         = make([]time.Duration, size)
-		averageFragment = make([]time.Duration, size)
+		total        = 10
+		size         = len(countList)
+		average      = make([]time.Duration, size)
+		averageChunk = make([]time.Duration, size)
 	)
 	for j := 0; j < total; j++ {
 		fmt.Printf("The %d times\n", j)
@@ -57,18 +57,18 @@ func TestSignFile(t *testing.T) {
 			fmt.Printf("\tSignFile:\t%s, \t%s, \tduration: %v\n", filename, string(data), duration)
 
 			prev = time.Now()
-			data, err = SignFileByFragment(filename)
+			data, err = SignFileByChunk(filename)
 			duration = time.Now().Sub(prev)
-			averageFragment[i] += duration
+			averageChunk[i] += duration
 			if err != nil {
-				fmt.Println("\tTest failed for SignFileByFragment:", filename, err)
+				fmt.Println("\tTest failed for SignFileByChunk:", filename, err)
 			}
-			fmt.Printf("\tSignFileByFragment:\t%s, \t%s, duration: %v\n", filename, string(data), duration)
+			fmt.Printf("\tSignFileByChunk:\t%s, \t%s, duration: %v\n", filename, string(data), duration)
 		}
 	}
 
 	for i := 0; i < size; i++ {
-		fmt.Printf("%d in 10 times average: %v -- %v\n", i, average[i]/time.Duration(total), averageFragment[i]/time.Duration(total))
+		fmt.Printf("%d in 10 times average: %v -- %v\n", i, average[i]/time.Duration(total), averageChunk[i]/time.Duration(total))
 	}
 }
 

@@ -75,7 +75,7 @@ verify:
 
 func signFile(srcFile, fpath, hashDir string) error {
 	fmt.Println("Will signature:", srcFile, fpath)
-	signature, err := signer.SignFileByFragment(srcFile)
+	signature, err := signer.SignFileByChunk(srcFile)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func signFile(srcFile, fpath, hashDir string) error {
 }
 
 func verifyFile(fpath, prefixDir string, hashDir string) (bool, error) {
-	signature, err := signer.SignFileByFragment(fpath)
+	signature, err := signer.SignFileByChunk(fpath)
 	if err != nil {
 		return false, err
 	}

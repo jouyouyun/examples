@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	defaultFragmentSize = 1024 * 1024
-	sizePerRead         = 1024
+	defaultChunkSize = 1024 * 1024
+	sizePerRead      = 1024
 )
 
 func SignFile(filename string) ([]byte, error) {
@@ -30,8 +30,8 @@ func SignFile(filename string) ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
-func SignFileByFragment(filename string) ([]byte, error) {
-	list, err := calcFragmentHash(filename)
+func SignFileByChunk(filename string) ([]byte, error) {
+	list, err := calcChunkHash(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +44,8 @@ func SignFileByFragment(filename string) ([]byte, error) {
 	return encoder.Sum(nil), nil
 }
 
-func calcFragmentHash(filename string) ([][32]byte, error) {
-	list, err := genFragment(filename)
+func calcChunkHash(filename string) ([][32]byte, error) {
+	list, err := makeChunk(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +81,8 @@ func calcFragmentHash(filename string) ([][32]byte, error) {
 }
 
 func doCalcHash(fr *os.File, idx int) ([32]byte, error) {
-	var buf = make([]byte, defaultFragmentSize)
-	_, err := fr.ReadAt(buf, int64(defaultFragmentSize*idx))
+	var buf = make([]byte, defaultChunkSize)
+	_, err := fr.ReadAt(buf, int64(defaultChunkSize*idx))
 	if err != nil && err != io.EOF {
 		return [32]byte{}, err
 	}
@@ -90,15 +90,15 @@ func doCalcHash(fr *os.File, idx int) ([32]byte, error) {
 	return sha256.Sum256(buf), nil
 }
 
-func genFragment(filename string) ([][32]byte, error) {
+func makeChunk(filename string) ([][32]byte, error) {
 	info, err := os.Stat(filename)
 	if err != nil {
 		return nil, err
 	}
 
 	total := info.Size()
-	num := total / defaultFragmentSize
-	if total%defaultFragmentSize != 0 {
+	num := total / defaultChunkSize
+	if total%defaultChunkSize != 0 {
 		num += 1
 	}
 
