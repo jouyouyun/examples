@@ -1,8 +1,10 @@
 package signer
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"io"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"sync"
@@ -42,6 +44,31 @@ func SignFileByChunk(filename string) ([]byte, error) {
 	}
 
 	return encoder.Sum(nil), nil
+}
+
+func VerifyFile(fpath, hashFile string) (bool, error) {
+	signature, err := SignFile(fpath)
+	if err != nil {
+		return false, err
+	}
+	return verifySignature(hashFile, signature)
+}
+
+func VerifyFileByChunk(fpath, hashFile string) (bool, error) {
+	signature, err := SignFileByChunk(fpath)
+	if err != nil {
+		return false, err
+	}
+	return verifySignature(hashFile, signature)
+}
+
+func verifySignature(hashFile string, signature []byte) (bool, error) {
+	data, err := ioutil.ReadFile(hashFile)
+	if err != nil {
+		return false, err
+	}
+
+	return bytes.Equal(signature, data), nil
 }
 
 func calcChunkHash(filename string) ([][32]byte, error) {

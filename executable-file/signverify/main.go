@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"flag"
 	"fmt"
@@ -83,19 +82,10 @@ func signFile(srcFile, fpath, hashDir string) error {
 }
 
 func verifyFile(fpath, prefixDir string, hashDir string) (bool, error) {
-	signature, err := signer.SignFileByChunk(fpath)
-	if err != nil {
-		return false, err
-	}
-
 	hashFile := filepath.Join(*output, fmt.Sprintf("%x",
 		sha256.Sum256([]byte(filepath.Join("/", strings.TrimPrefix(fpath, prefixDir))))))
-	data, err := ioutil.ReadFile(hashFile + ".sign")
-	if err != nil {
-		return false, err
-	}
 
-	return bytes.Equal(signature, data), nil
+	return signer.VerifyFileByChunk(fpath, hashFile+".sign")
 }
 
 func walkDir(fpath string, info fs.FileInfo, err error) error {
