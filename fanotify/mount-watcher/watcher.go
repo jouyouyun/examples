@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"syscall"
 
 	"golang.org/x/sys/unix"
 )
@@ -115,13 +116,15 @@ func (w *Watcher) loop(filename string) error {
 			break
 		}
 
+		file, _ := os.Readlink(fmt.Sprintf("/proc/self/fd/%d", event.Fd))
 		progPath, _ := os.Readlink(fmt.Sprintf("/proc/%d/exe", event.Pid))
 		w.Event <- EventInfo{
-			Filename:              filename,
+			Filename:              file,
 			Program:               progPath,
 			File:                  fi,
 			FanotifyEventMetadata: event,
 		}
+		_ = syscall.Close(int(event.Fd))
 	}
 
 	w.Remove(filename)

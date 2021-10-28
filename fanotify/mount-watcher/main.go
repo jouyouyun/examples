@@ -92,15 +92,28 @@ func main() {
 	rand.Seed(time.Now().Unix())
 	for {
 		ev := <-w.Event
+		matched := isItemInList(ev.Filename, watchedFileList)
 		if ev.MaskMatch(unix.FAN_CLOSE_WRITE) {
-			fmt.Printf("CLOSE_WRITE: %q <-- %q\n", ev.Filename, ev.Program)
+			if matched {
+				// do something
+				fmt.Printf("CLOSE_WRITE: %q <-- %q\n", ev.Filename, ev.Program)
+			}
+			continue
 		}
 
 		hasPerm := false
 		if ev.MaskMatch(unix.FAN_OPEN_EXEC_PERM) {
+			if !matched {
+				ev.Allow()
+				continue
+			}
 			hasPerm = true
 			fmt.Printf("OPEN_EXEC_PERM: %q <-- %q -- %v\n", ev.Filename, ev.Program, ev.Pid)
 		} else if ev.MaskMatch(unix.FAN_OPEN_PERM) {
+			if !matched {
+				ev.Allow()
+				continue
+			}
 			hasPerm = true
 			fmt.Printf("OPEN_PERM: %q <-- %q -- %v\n", ev.Filename, ev.Program, ev.Pid)
 		}
