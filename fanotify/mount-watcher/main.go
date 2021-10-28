@@ -58,6 +58,7 @@ func genEventMapKey(info *EventInfo) string {
 func watchFile(filename string) error {
 	mp := queryFileMountPoint(filename)
 	if isItemInList(mp, watchedMountPoint) {
+		watchedFileList = append(watchedFileList, filename)
 		return nil
 	}
 
