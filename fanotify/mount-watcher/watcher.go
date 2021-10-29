@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"sync"
-	"syscall"
 
 	"golang.org/x/sys/unix"
 )
@@ -124,7 +123,6 @@ func (w *Watcher) loop(filename string) error {
 			File:                  fi,
 			FanotifyEventMetadata: event,
 		}
-		_ = syscall.Close(int(event.Fd))
 	}
 
 	w.Remove(filename)

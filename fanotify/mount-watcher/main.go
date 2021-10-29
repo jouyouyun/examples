@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"os"
 	"sync"
+	"syscall"
 	"time"
 
 	"golang.org/x/sys/unix"
@@ -95,6 +96,7 @@ func main() {
 		ev := <-w.Event
 		matched := isItemInList(ev.Filename, watchedFileList)
 		if ev.MaskMatch(unix.FAN_CLOSE_WRITE) {
+			_ = syscall.Close(int(ev.Fd))
 			if matched {
 				// do something
 				fmt.Printf("CLOSE_WRITE: %q <-- %q\n", ev.Filename, ev.Program)
@@ -106,6 +108,7 @@ func main() {
 		if ev.MaskMatch(unix.FAN_OPEN_EXEC_PERM) {
 			if !matched {
 				ev.Allow()
+				_ = syscall.Close(int(ev.Fd))
 				continue
 			}
 			hasPerm = true
@@ -113,6 +116,7 @@ func main() {
 		} else if ev.MaskMatch(unix.FAN_OPEN_PERM) {
 			if !matched {
 				ev.Allow()
+				_ = syscall.Close(int(ev.Fd))
 				continue
 			}
 			hasPerm = true
@@ -123,6 +127,7 @@ func main() {
 			updated := evSet.Update(key)
 			if !updated {
 				ev.Allow()
+				_ = syscall.Close(int(ev.Fd))
 			} else {
 				go func(_e *EventInfo) {
 					if rand.Int31n(20)%2 == 0 {
@@ -132,6 +137,7 @@ func main() {
 						fmt.Println("\tDeny:", _e.Filename, _e.Program)
 						_e.Deny()
 					}
+					_ = syscall.Close(int(_e.Fd))
 				}(&ev)
 			}
 		}
