@@ -1,0 +1,67 @@
+# % Options Settings: https://orgmode.org/manual/Export-Settings.html
+#+OPTIONS: timestamp:nil ^:nil <:nil p:t prop:t tags:t tasks:t todo:t
+#+AUTHOR: jouyouyun
+#+EMAIL: yanbowen717@gmail.com
+#+TITLE: TPM 练习
+
+为了进一步了解熟悉 TPM，设计了一些练习题，在实现的过程中逐步了解 TPM 的功能及使用方法。
+
+练习题的实现使用了 [[https://github.com/tpm2-software/tpm2-tss][tpm2-tss]] API 在 [[https://github.com/stefanberger/swtpm][swtpm]] 模拟器上进行测试。
+
+练习题的范围见下文。
+
+** 设备管理
+*** 连接设备
+
+*** 关闭设备
+
+*** 设备授权
+
+** 认证管理
+*** 密码
+
+*** 密钥
+
+*** 策略
+
+** 密钥管理
+*** 生成主密钥
+
+*** 生成密钥
+
+*** 销毁密钥
+
+*** 导出密钥
+
+*** 导入外部密钥
+
+*** 持久化存储密钥
+
+*** 列出持久化存储的密钥
+
+** 会话管理
+*** 打开会话
+
+*** 关闭会话
+
+** 加解密
+*** 加密数据
+
+*** 解密数据
+
+*** 证书加密数据
+
+*** 证书解密数据
+
+** 签名验证
+*** 签名数据
+
+*** 验证数据
+
+*** 证书签名数据
+
+*** 证书验证数据
+
+** NV 使用
+
+** PCR 使用
