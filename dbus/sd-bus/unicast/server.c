@@ -55,14 +55,13 @@ static int signal_result(sd_bus_message *m, int32_t sum)
 	       uid, pid, owner_uid, comm, exe, desc);
 
 	ret = sd_bus_message_new_signal(sd_bus_message_get_bus(m), &signal,
-					BUS_PATH, BUS_IFC, "Result");
+					SRV_BUS_PATH, SRV_BUS_DEST, "Result");
 	if (ret < 0) {
 		fprintf(stderr, "Failed to new signal message: %s\n", strerror(-ret));
 		return ret;
 	}
 
-	/* sd_bus_message_set_destination(signal, "com.deepin.print.helper"); */
-	sd_bus_message_set_destination(signal, "info.jouyouyun.system.Test");
+	sd_bus_message_set_destination(signal, LISTEN_BUS_DEST);
 	sd_bus_message_append(signal, "i", sum);
         sd_bus_send(sd_bus_message_get_bus(m), signal, NULL);
 	
@@ -104,13 +103,13 @@ main(int argc, char *argv[])
 		return ret;
 	}
 
-	ret = sd_bus_add_object_vtable(bus, &slot, BUS_PATH, BUS_IFC, vtable, NULL);
+	ret = sd_bus_add_object_vtable(bus, &slot, SRV_BUS_PATH, SRV_BUS_DEST, vtable, NULL);
 	if (ret < 0) {
 		fprintf(stderr, "Failed to add object: %s\n", strerror(-ret));
                 goto finish;
         }
 
-        ret = sd_bus_request_name(bus, BUS_DEST, 0);
+        ret = sd_bus_request_name(bus, SRV_BUS_DEST, 0);
 	if (ret < 0) {
 		fprintf(stderr, "Failed to own name: %s\n", strerror(-ret));
 		goto finish;
