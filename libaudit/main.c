@@ -32,7 +32,7 @@ main(int argc, char *argv[])
 
 	ret = audit_log_user_message(fd, AUDIT_TRUSTED_APP,
 								 "I'm launched, but will then exit.", NULL, NULL, NULL, 1);
-	if (ret <= 0) {
+	if (ret == -1) {
 		fprintf(stderr, "failed to log message: %s\n", strerror(errno));
 		goto close;
 	}
