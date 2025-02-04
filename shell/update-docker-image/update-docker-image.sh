@@ -20,7 +20,7 @@ function restart_docker_compose() {
 # list images and remove the special image with tag
 # output format: REPOSITORY  TAG  IMAGE ID  CREATED  SIZE
 function clean_images() {
-    deleted_image="$1:$2"
+    deleted_image="$1:<$2>"
     dockerfile="$3"
 
     mapfile -t images < <(docker images --format "table {{.Repository}} {{.Tag}} {{.ID}}")
@@ -31,14 +31,14 @@ function clean_images() {
         fi
 
         # parse output to items
-	    items=($image)
+        items=($image)
         # check items[0] whether prompt
         if [ "${items[0]}" == "REPOSITORY" ]; then
             continue
         fi
         
         # check items[0] and  items[2] whether deleted image
-        if [ "${items[0]}:${items[1]}" == "$deleted_image" ]; then
+        if [ "${items[0]}:${items[1]}" == "${deleted_image}" ]; then
             echo "Will remove image: ${items[0]}:${items[1]}"
             restart_docker_compose "$dockerfile"
             docker rmi -f ${items[2]}
