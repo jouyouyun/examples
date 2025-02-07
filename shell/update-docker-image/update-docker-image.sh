@@ -54,9 +54,9 @@ function main() {
 
     export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
 
-    image_name=$1
-    image_tag=$2
-    dockerfile=$3
+    image_name="$1"
+    image_tag="$2"
+    dockerfile="$3"
 
     update_image "$image_name:$image_tag"
     clean_images "$image_name" "none" "$dockerfile"
