@@ -1,0 +1,10 @@
+# 一个简单的计算器服务
+interface top.jouyouyun.calculator1
+
+method Add(i: int, j: int) -> (rc: int)
+
+method Sub(i :int, j: int) -> (rc: int)
+
+method Multiple(i: int, j: int) -> (rc: int)
+
+method Division(i: int, j: int) -> (rc: int)
